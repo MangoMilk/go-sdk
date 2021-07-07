@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"github.com/MangoMilk/go-kit/net"
 	"reflect"
 	"sort"
@@ -37,7 +38,7 @@ const (
 )
 
 func (wx *Wechat) GenSign(body interface{}, apiKey string) string {
-	var data = make(map[string]interface{})
+	var data = make(map[string]reflect.Value)
 	refVal := reflect.ValueOf(body)
 	for i := 0; i < refVal.NumField(); i++ {
 		xmlKey := refVal.Type().Field(i).Tag.Get("xml")
@@ -45,17 +46,17 @@ func (wx *Wechat) GenSign(body interface{}, apiKey string) string {
 		case "xml", "sign":
 			break
 		case "appid":
-			data[xmlKey] = wx.AppID
+			data[xmlKey] = reflect.ValueOf(wx.AppID)
 			break
 		default:
-			data[xmlKey] = refVal.Field(i).String()
+			data[xmlKey] = refVal.Field(i)
 		}
 	}
 
 	// 生成签名（sign）和请求参数（xml）
 	var dataKeys []string
 	for k, v := range data {
-		if v != "" {
+		if !v.IsZero() {
 			dataKeys = append(dataKeys, k)
 		}
 	}
@@ -64,7 +65,7 @@ func (wx *Wechat) GenSign(body interface{}, apiKey string) string {
 	// joint data
 	signStr := ""
 	for _, key := range dataKeys {
-		signStr += key + "=" + data[key].(string) + "&"
+		signStr += fmt.Sprintf("%v=%v&", key, data[key])
 	}
 
 	h := md5.New()
