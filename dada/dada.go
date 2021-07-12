@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/MangoMilk/go-kit/net"
-	"github.com/MangoMilk/go-kit/encrypt"
 	"github.com/MangoMilk/go-kit/encode"
+	"github.com/MangoMilk/go-kit/encrypt"
+	"github.com/MangoMilk/go-kit/net"
 	"reflect"
 	"sort"
 	"strconv"
@@ -33,6 +33,7 @@ const (
 	cancelOrderUrl     = "/api/order/formalCancel"
 	addMerchantUrl     = "/merchantApi/merchant/add"
 	addShopUrl         = "/api/shop/add"
+	confirmMessageUrl  = "/api/message/confirm"
 )
 
 type CancelFrom int64
@@ -123,10 +124,10 @@ type baseReq struct {
 	Body      string `json:"body"`      // 业务参数，JSON字符串
 }
 
-func (dd *Dada) genBaseReq(req interface{}) (*baseReq,error) {
+func (dd *Dada) genBaseReq(req interface{}) (*baseReq, error) {
 	dataByte, jsonErr := json.Marshal(req)
 	if jsonErr != nil {
-		return nil,jsonErr
+		return nil, jsonErr
 	}
 
 	r := baseReq{
@@ -140,7 +141,7 @@ func (dd *Dada) genBaseReq(req interface{}) (*baseReq,error) {
 
 	r.Signature = dd.genSign(r, dd.AppSecret)
 
-	return &r,nil
+	return &r, nil
 }
 
 type baseRes struct {
@@ -157,20 +158,20 @@ type getCityRes struct {
 	CityCode string `map:"cityCode"`
 }
 
-func (dd *Dada) GetCity() (*baseRes, []*getCityRes,error) {
-	ddReq ,reqErr:= dd.genBaseReq("")
-	if reqErr!=nil {
-		return nil,nil,reqErr
+func (dd *Dada) GetCity() (*baseRes, []*getCityRes, error) {
+	ddReq, reqErr := dd.genBaseReq("")
+	if reqErr != nil {
+		return nil, nil, reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(getCityUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(getCityUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,nil,reqErr
+		return nil, nil, reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,nil,reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, nil, reqErr
 	}
 
 	result := ddRes.Result.([]interface{})
@@ -182,7 +183,7 @@ func (dd *Dada) GetCity() (*baseRes, []*getCityRes,error) {
 		res[i] = &unit
 	}
 
-	return &ddRes, res,nil
+	return &ddRes, res, nil
 }
 
 // ==================== 新增订单 ====================
@@ -241,27 +242,27 @@ type addOrderRes struct {
 	InsuranceFee float64 `map:"insuranceFee"` // 否 保价费(单位：元)
 }
 
-func (dd *Dada) AddOrder(req *AddOrderReq) (*baseRes, *addOrderRes,error) {
+func (dd *Dada) AddOrder(req *AddOrderReq) (*baseRes, *addOrderRes, error) {
 
-	ddReq,reqErr := dd.genBaseReq(req)
-	if reqErr!=nil {
-		return nil,nil,reqErr
+	ddReq, reqErr := dd.genBaseReq(req)
+	if reqErr != nil {
+		return nil, nil, reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(addOrderUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(addOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,nil,reqErr
+		return nil, nil, reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,nil,reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, nil, reqErr
 	}
 
 	var res addOrderRes
 	encode.Map2struct(ddRes.Result, &res)
 
-	return &ddRes, &res,nil
+	return &ddRes, &res, nil
 }
 
 // ==================== 预发布订单 ====================
@@ -314,27 +315,26 @@ type queryDeliverFeeRes struct {
 	DeliveryNo   string  `map:"deliveryNo"`   // 是	平台订单号，有效期3分钟
 }
 
-func (dd *Dada) QueryDeliverFee(req *QueryDeliverFeeReq) (*baseRes, *queryDeliverFeeRes,error) {
-	ddReq,reqErr := dd.genBaseReq(req)
-	if reqErr!=nil {
-		return nil,nil,reqErr
+func (dd *Dada) QueryDeliverFee(req *QueryDeliverFeeReq) (*baseRes, *queryDeliverFeeRes, error) {
+	ddReq, reqErr := dd.genBaseReq(req)
+	if reqErr != nil {
+		return nil, nil, reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(queryDeliverFeeUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(queryDeliverFeeUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,nil,reqErr
+		return nil, nil, reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,nil,reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, nil, reqErr
 	}
-
 
 	var res queryDeliverFeeRes
 	encode.Map2struct(ddRes.Result, &res)
 
-	return &ddRes, &res,nil
+	return &ddRes, &res, nil
 }
 
 // ==================== 预发布订单后直接下单 ====================
@@ -342,23 +342,23 @@ type AddAfterQueryReq struct {
 	DeliveryNo string `json:"deliveryNo"` // 是	平台订单号
 }
 
-func (dd *Dada) AddAfterQuery(deliveryNo string) (*baseRes,error) {
-	ddReq,reqErr := dd.genBaseReq(&AddAfterQueryReq{DeliveryNo: deliveryNo})
-	if reqErr!=nil {
-		return nil,reqErr
+func (dd *Dada) AddAfterQuery(deliveryNo string) (*baseRes, error) {
+	ddReq, reqErr := dd.genBaseReq(&AddAfterQueryReq{DeliveryNo: deliveryNo})
+	if reqErr != nil {
+		return nil, reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(addAfterQueryUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(addAfterQueryUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,reqErr
+		return nil, reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, reqErr
 	}
 
-	return &ddRes,nil
+	return &ddRes, nil
 }
 
 // ==================== 订单详情查询（一分钟更新一次） ====================
@@ -410,26 +410,26 @@ type queryOrderRes struct {
 	SupplierLng      string  `map:"supplierLng"`      //	店铺经度
 }
 
-func (dd *Dada) QueryOrder(orderID string) (*baseRes, *queryOrderRes,error) {
-	ddReq,reqErr := dd.genBaseReq(&QueryOrderReq{OrderID: orderID})
-	if reqErr!=nil {
-		return nil,nil,reqErr
+func (dd *Dada) QueryOrder(orderID string) (*baseRes, *queryOrderRes, error) {
+	ddReq, reqErr := dd.genBaseReq(&QueryOrderReq{OrderID: orderID})
+	if reqErr != nil {
+		return nil, nil, reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(queryOrderUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(queryOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,nil,reqErr
+		return nil, nil, reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,nil,reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, nil, reqErr
 	}
 
 	var res queryOrderRes
 	encode.Map2struct(ddRes.Result, &res)
 
-	return &ddRes, &res,nil
+	return &ddRes, &res, nil
 }
 
 // ==================== 取消订单 ====================
@@ -458,26 +458,26 @@ type cancelOrderRes struct {
 	DeductFee float64 `map:"deduct_fee"` //	违约金
 }
 
-func (dd *Dada) CancelOrder(req *CancelOrderReq) (*baseRes, *cancelOrderRes,error) {
-	ddReq,reqErr := dd.genBaseReq(req)
-	if reqErr!=nil {
-		return nil,nil,reqErr
+func (dd *Dada) CancelOrder(req *CancelOrderReq) (*baseRes, *cancelOrderRes, error) {
+	ddReq, reqErr := dd.genBaseReq(req)
+	if reqErr != nil {
+		return nil, nil, reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(cancelOrderUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(cancelOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,nil,reqErr
+		return nil, nil, reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,nil,reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, nil, reqErr
 	}
 
 	var res cancelOrderRes
 	encode.Map2struct(ddRes.Result, &res)
 
-	return &ddRes, &res,nil
+	return &ddRes, &res, nil
 }
 
 // ==================== 注册商户 ====================
@@ -491,23 +491,23 @@ type AddMerchantReq struct {
 	Email             string `json:"email"`              // 是	邮箱地址
 }
 
-func (dd *Dada) AddMerchant(req *AddMerchantReq) (*baseRes, string,error) {
-	ddReq,reqErr := dd.genBaseReq(req)
-	if reqErr!=nil {
-		return nil,"",reqErr
+func (dd *Dada) AddMerchant(req *AddMerchantReq) (*baseRes, string, error) {
+	ddReq, reqErr := dd.genBaseReq(req)
+	if reqErr != nil {
+		return nil, "", reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(addMerchantUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(addMerchantUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,"",reqErr
+		return nil, "", reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,"",reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, "", reqErr
 	}
 
-	return &ddRes, strconv.FormatInt(ddRes.Result.(int64), 10),nil
+	return &ddRes, strconv.FormatInt(ddRes.Result.(int64), 10), nil
 }
 
 // ==================== 创建门店 ====================
@@ -556,20 +556,20 @@ type failedItem struct {
 	ShopName string `map:"shopName"`
 }
 
-func (dd *Dada) AddShop(req *AddShopReq) (*baseRes, *addShopRes,error) {
-	ddReq,reqErr := dd.genBaseReq(req.shops)
-	if reqErr!=nil {
-		return nil,nil,reqErr
+func (dd *Dada) AddShop(req *AddShopReq) (*baseRes, *addShopRes, error) {
+	ddReq, reqErr := dd.genBaseReq(req.shops)
+	if reqErr != nil {
+		return nil, nil, reqErr
 	}
 
-	data,httpErr:=net.HttpPost(dd.genUrl(addShopUrl), *ddReq, dd.HttpHeader, false,"","")
+	data, httpErr := net.HttpPost(dd.genUrl(addShopUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil,nil,reqErr
+		return nil, nil, reqErr
 	}
 
 	var ddRes baseRes
-	if jsonErr:=json.Unmarshal(data,&ddRes);jsonErr !=nil {
-		return nil,nil,reqErr
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, nil, reqErr
 	}
 
 	var res addShopRes
@@ -596,7 +596,22 @@ func (dd *Dada) AddShop(req *AddShopReq) (*baseRes, *addShopRes,error) {
 		}
 	}
 
-	return &ddRes, &res,nil
+	return &ddRes, &res, nil
+}
+
+// ==================== 订单状态通知 ====================
+type OrderNotifyReq struct {
+	ClientID     string          `json:"client_id" validate:"required"`    //	是	返回达达运单号，默认为空
+	OrderID      string          `json:"order_id" validate:"required"`     //	是	添加订单接口中的origin_id值
+	OrderStatus  OrderStatusCode `json:"order_status" validate:"required"` //	是	订单状态(待接单＝1,待取货＝2,配送中＝3,已完成＝4,已取消＝5, 指派单=8,妥投异常之物品返回中=9, 妥投异常之物品返回完成=10, 骑士到店=100,创建达达运单失败=1000 可参考文末的状态说明）
+	CancelReason string          `json:"cancel_reason"`                    //	是	订单取消原因,其他状态下默认值为空字符串
+	CancelFrom   CancelFrom      `json:"cancel_from"`                      //	是	订单取消原因来源(1:达达配送员取消；2:商家主动取消；3:系统或客服取消；0:默认值)
+	UpdateTime   int64           `json:"update_time" validate:"required"`  //	是	更新时间，时间戳除了创建达达运单失败=1000的精确毫秒，其他时间戳精确到秒
+	Signature    string          `json:"signature" validate:"required"`    //	是	对client_id, order_id, update_time的值进行字符串升序排列，再连接字符串，取md5值
+	DmID         int64           `json:"dm_id"`                            //	否	达达配送员id，接单以后会传
+	DmName       string          `json:"dm_name"`                          //	否	配送员姓名，接单以后会传
+	DmMobile     string          `json:"dm_mobile"`                        //	否	配送员手机号，接单以后会传
+	FinishCode   string          `json:"finish_code"`                      //	否	收货码
 }
 
 func CheckNotifySign(clientID, orderID, updateTime, sign string) error {
@@ -604,7 +619,7 @@ func CheckNotifySign(clientID, orderID, updateTime, sign string) error {
 	sort.Strings(args)
 	str := strings.Join(args, "")
 
-	md5Res,err:=encrypt.MD5(str)
+	md5Res, err := encrypt.MD5(str)
 	if err != nil {
 		return err
 	}
@@ -614,4 +629,77 @@ func CheckNotifySign(clientID, orderID, updateTime, sign string) error {
 	}
 
 	return nil
+}
+
+// ==================== 达达消息通知 ====================
+type NotifyMessageType int64
+
+const (
+	NotifyMessageTypeTransporterCancel = NotifyMessageType(1)
+)
+
+type NotifyReq struct {
+	MessageBody string            `json:"messageBody"`
+	MessageType NotifyMessageType `json:"messageType"`
+}
+
+type NotifyReturnMsg string
+
+const (
+	NotifySuccessReturnMsg = NotifyReturnMsg("ok")
+	NotifyFailReturnMsg    = NotifyReturnMsg("fail")
+)
+
+type NotifyRes struct {
+	Status NotifyReturnMsg `json:"status"`
+}
+
+// ==================== 骑手取消通知 ====================
+type TransporterNotifyReq struct {
+	OrderId      string `json:"orderId" validate:"required"` // 是 商家第三方订单号
+	DadaOrderId  int64  `json:"dadaOrderId"`                 // 否 达达订单号
+	CancelReason string `json:"cancelReason"`                // 是 骑士取消原因
+}
+
+// ==================== 通知确认 ====================
+type IsConfirmTransporterCancel int64
+
+const (
+	IsConfirmTransporterCancelYes = IsConfirmTransporterCancel(1)
+	IsConfirmTransporterCancelNo  = IsConfirmTransporterCancel(0)
+)
+
+type NotifyConfirmReq struct {
+	OrderId     string                     `json:"orderId"`     // 是 商家第三方订单号
+	DadaOrderId int64                      `json:"dadaOrderId"` // 否 达达订单号
+	IsConfirm   IsConfirmTransporterCancel `json:"isConfirm"`   // 是 0:不同意，1:表示同意
+}
+
+func (dd *Dada) ConfirmMessage(req *NotifyConfirmReq) (*baseRes, error) {
+	reqByte, jsonMarshalErr := json.Marshal(req)
+	if jsonMarshalErr != nil {
+		return nil, jsonMarshalErr
+	}
+
+	messageReq := &NotifyReq{
+		MessageBody: string(reqByte),
+		MessageType: NotifyMessageTypeTransporterCancel,
+	}
+
+	ddReq, reqErr := dd.genBaseReq(messageReq)
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	data, httpErr := net.HttpPost(dd.genUrl(confirmMessageUrl), *ddReq, dd.HttpHeader, false, "", "")
+	if httpErr != nil {
+		return nil, reqErr
+	}
+
+	var ddRes baseRes
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, reqErr
+	}
+
+	return &ddRes, nil
 }
