@@ -27,6 +27,7 @@ const (
 
 	getCityUrl         = "/api/cityCode/list"
 	addOrderUrl        = "/api/order/addOrder"
+	reAddOrderUrl      = "/api/order/reAddOrder"
 	queryDeliverFeeUrl = "/api/order/queryDeliverFee"
 	addAfterQueryUrl   = "/api/order/addAfterQuery"
 	queryOrderUrl      = "/api/order/status/query"
@@ -187,6 +188,13 @@ func (dd *Dada) GetCity() (*baseRes, []*getCityRes, error) {
 }
 
 // ==================== 新增订单 ====================
+type IsFinishCodeNeeded int64
+
+const (
+	IsFinishCodeNeededYes = IsFinishCodeNeeded(1)
+	IsFinishCodeNeededNo  = IsFinishCodeNeeded(0)
+)
+
 type AddOrderReq struct {
 	ShopNo          string  `json:"shop_no"`          // 是	门店编号，门店创建后可在门店列表和单页查看
 	OriginID        string  `json:"origin_id"`        // 是	第三方订单ID
@@ -219,11 +227,11 @@ type AddOrderReq struct {
 	保费=配送物品实际价值*费率（5‰），配送物品价值及最高赔付不超过10000元， 最高保费为50元（物品价格最小单位为100元，不足100元部分按100元认定，保价费向上取整数， 如：物品声明价值为201元，保价费为300元*5‰=1.5元，取整数为2元。）
 	若您选择不保价，若物品出现丢失或损毁，最高可获得平台30元优惠券。 （优惠券直接存入用户账户中）。
 	*/
-	IsFinishCodeNeeded int64     `json:"is_finish_code_needed"` // 否	收货码（0：不需要；1：需要。收货码的作用是：骑手必须输入收货码才能完成订单妥投）
-	DelayPublishTime   int64     `json:"delay_publish_time"`    // 否	预约发单时间（预约时间unix时间戳(10位),精确到分;整分钟为间隔，并且需要至少提前5分钟预约，可以支持未来3天内的订单发预约单。）
-	IsDirectDelivery   int64     `json:"is_direct_delivery"`    // 否	是否选择直拿直送（0：不需要；1：需要。选择直拿直送后，同一时间骑士只能配送此订单至完成，同时，也会相应的增加配送费用）
-	ProductList        []Product `json:"product_list"`          // 否	订单商品明细
-	PickUpPos          string    `json:"pick_up_pos"`           // 否	货架信息,该字段可在骑士APP订单备注中展示
+	IsFinishCodeNeeded IsFinishCodeNeeded `json:"is_finish_code_needed"` // 否	收货码（0：不需要；1：需要。收货码的作用是：骑手必须输入收货码才能完成订单妥投）
+	DelayPublishTime   int64              `json:"delay_publish_time"`    // 否	预约发单时间（预约时间unix时间戳(10位),精确到分;整分钟为间隔，并且需要至少提前5分钟预约，可以支持未来3天内的订单发预约单。）
+	IsDirectDelivery   int64              `json:"is_direct_delivery"`    // 否	是否选择直拿直送（0：不需要；1：需要。选择直拿直送后，同一时间骑士只能配送此订单至完成，同时，也会相应的增加配送费用）
+	ProductList        []Product          `json:"product_list"`          // 否	订单商品明细
+	PickUpPos          string             `json:"pick_up_pos"`           // 否	货架信息,该字段可在骑士APP订单备注中展示
 }
 
 type Product struct {
@@ -265,6 +273,78 @@ func (dd *Dada) AddOrder(req *AddOrderReq) (*baseRes, *addOrderRes, error) {
 	return &ddRes, &res, nil
 }
 
+// ==================== 订单重发 ====================
+type ReAddOrderReq struct {
+	ShopNo          string  `json:"shop_no"`          // 是	门店编号，门店创建后可在门店列表和单页查看
+	OriginID        string  `json:"origin_id"`        // 是	第三方订单ID
+	CityCode        string  `json:"city_code"`        // 是	订单所在城市的code（查看各城市对应的code值）
+	CargoPrice      float64 `json:"cargo_price"`      // 是	订单金额（单位：元）
+	IsPrepay        int64   `json:"is_prepay"`        // 是	是否需要垫付 1:是 0:否 (垫付订单金额，非运费)
+	ReceiverName    string  `json:"receiver_name"`    // 是	收货人姓名
+	ReceiverAddress string  `json:"receiver_address"` // 是	收货人地址
+	ReceiverLat     float64 `json:"receiver_lat"`     // 是	收货人地址纬度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器）
+	ReceiverLng     float64 `json:"receiver_lng"`     // 是	收货人地址经度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器)
+	Callback        string  `json:"callback"`         // 是	回调URL（查看回调说明）
+	CargoWeight     float64 `json:"cargo_weight"`     // 是	订单重量（单位：Kg）
+	ReceiverPhone   string  `json:"receiver_phone"`   // 是	收货人手机号（手机号和座机号必填一项）
+	ReceiverTel     string  `json:"receiver_tel"`     // 否	收货人座机号（手机号和座机号必填一项）
+	Tips            float64 `json:"tips"`             // 否	小费（单位：元，精确小数点后一位）
+	Info            string  `json:"info"`             // 否	订单备注
+	CargoType       int64   `json:"cargo_type"`       // 否	订单商品类型：食品小吃-1,饮料-2,鲜花绿植-3,文印票务-8,便利店-9,水果生鲜-13,同城电商-19, 医药-20,蛋糕-21,酒品-24,小商品市场-25,服装-26,汽修零配-27,数码家电-28,小龙虾-29,个人-50,火锅-51,个护美妆-53、母婴-55,家居家纺-57,手机-59,家装-61,其他-5
+	CargoNum        int64   `json:"cargo_num"`        // 否	订单商品数量
+	InvoiceTitle    string  `json:"invoice_title"`    // 否	发票抬头
+	OriginMark      string  `json:"origin_mark"`      // 否	订单来源标示（只支持字母，最大长度为10）
+	OriginMarkNo    string  `json:"origin_mark_no"`
+	/* 否	订单来源编号，最大长度为30，该字段可以显示在骑士APP订单详情页面，示例：
+	origin_mark_no:"#京东到家#1"
+	达达骑士APP看到的是：#京东到家#1
+	*/
+	IsUseInsurance int64 `json:"is_use_insurance"`
+	/*否
+	是否使用保价费（0：不使用保价，1：使用保价； 同时，请确保填写了订单金额（cargo_price））
+	商品保价费(当商品出现损坏，可获取一定金额的赔付)
+	保费=配送物品实际价值*费率（5‰），配送物品价值及最高赔付不超过10000元， 最高保费为50元（物品价格最小单位为100元，不足100元部分按100元认定，保价费向上取整数， 如：物品声明价值为201元，保价费为300元*5‰=1.5元，取整数为2元。）
+	若您选择不保价，若物品出现丢失或损毁，最高可获得平台30元优惠券。 （优惠券直接存入用户账户中）。
+	*/
+	IsFinishCodeNeeded IsFinishCodeNeeded `json:"is_finish_code_needed"` // 否	收货码（0：不需要；1：需要。收货码的作用是：骑手必须输入收货码才能完成订单妥投）
+	DelayPublishTime   int64              `json:"delay_publish_time"`    // 否	预约发单时间（预约时间unix时间戳(10位),精确到分;整分钟为间隔，并且需要至少提前5分钟预约，可以支持未来3天内的订单发预约单。）
+	IsDirectDelivery   int64              `json:"is_direct_delivery"`    // 否	是否选择直拿直送（0：不需要；1：需要。选择直拿直送后，同一时间骑士只能配送此订单至完成，同时，也会相应的增加配送费用）
+	ProductList        []Product          `json:"product_list"`          // 否	订单商品明细
+	PickUpPos          string             `json:"pick_up_pos"`           // 否	货架信息,该字段可在骑士APP订单备注中展示
+}
+
+type reAddOrderRes struct {
+	Distance     float64 `map:"distance"`     // 是 配送距离(单位：米)
+	Fee          float64 `map:"fee"`          // 是 实际运费(单位：元)，运费减去优惠券费用
+	DeliverFee   float64 `map:"deliverFee"`   // 是 运费(单位：元)
+	CouponFee    float64 `map:"couponFee"`    // 否 优惠券费用(单位：元)
+	Tips         float64 `map:"tips"`         // 否 小费(单位：元)
+	InsuranceFee float64 `map:"insuranceFee"` // 否 保价费(单位：元)
+}
+
+func (dd *Dada) ReAddOrder(req *ReAddOrderReq) (*baseRes, *reAddOrderRes, error) {
+
+	ddReq, reqErr := dd.genBaseReq(req)
+	if reqErr != nil {
+		return nil, nil, reqErr
+	}
+
+	data, httpErr := net.HttpPost(dd.genUrl(reAddOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
+	if httpErr != nil {
+		return nil, nil, reqErr
+	}
+
+	var ddRes baseRes
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, nil, reqErr
+	}
+
+	var res reAddOrderRes
+	encode.Map2struct(ddRes.Result, &res)
+
+	return &ddRes, &res, nil
+}
+
 // ==================== 预发布订单 ====================
 type QueryDeliverFeeReq struct {
 	ShopNo          string  `json:"shop_no"`          // 是	门店编号，门店创建后可在门店列表和单页查看
@@ -298,11 +378,11 @@ type QueryDeliverFeeReq struct {
 	保费=配送物品实际价值*费率（5‰），配送物品价值及最高赔付不超过10000元， 最高保费为50元（物品价格最小单位为100元，不足100元部分按100元认定，保价费向上取整数， 如：物品声明价值为201元，保价费为300元*5‰=1.5元，取整数为2元。）
 	若您选择不保价，若物品出现丢失或损毁，最高可获得平台30元优惠券。 （优惠券直接存入用户账户中）。
 	*/
-	IsFinishCodeNeeded int64     `json:"is_finish_code_needed"` // 否	收货码（0：不需要；1：需要。收货码的作用是：骑手必须输入收货码才能完成订单妥投）
-	DelayPublishTime   int64     `json:"delay_publish_time"`    // 否	预约发单时间（预约时间unix时间戳(10位),精确到分;整分钟为间隔，并且需要至少提前5分钟预约，可以支持未来3天内的订单发预约单。）
-	IsDirectDelivery   int64     `json:"is_direct_delivery"`    // 否	是否选择直拿直送（0：不需要；1：需要。选择直拿直送后，同一时间骑士只能配送此订单至完成，同时，也会相应的增加配送费用）
-	ProductList        []Product `json:"product_list"`          // 否	订单商品明细
-	PickUpPos          string    `json:"pick_up_pos"`
+	IsFinishCodeNeeded IsFinishCodeNeeded `json:"is_finish_code_needed"` // 否	收货码（0：不需要；1：需要。收货码的作用是：骑手必须输入收货码才能完成订单妥投）
+	DelayPublishTime   int64              `json:"delay_publish_time"`    // 否	预约发单时间（预约时间unix时间戳(10位),精确到分;整分钟为间隔，并且需要至少提前5分钟预约，可以支持未来3天内的订单发预约单。）
+	IsDirectDelivery   int64              `json:"is_direct_delivery"`    // 否	是否选择直拿直送（0：不需要；1：需要。选择直拿直送后，同一时间骑士只能配送此订单至完成，同时，也会相应的增加配送费用）
+	ProductList        []Product          `json:"product_list"`          // 否	订单商品明细
+	PickUpPos          string             `json:"pick_up_pos"`
 }
 
 type queryDeliverFeeRes struct {
