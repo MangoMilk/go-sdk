@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/MangoMilk/go-kit/encode"
+	"github.com/MangoMilk/go-kit/encrypt"
 	"github.com/MangoMilk/go-kit/net"
 	"reflect"
 	"sort"
@@ -15,6 +17,7 @@ import (
 const (
 	unifiedOrderUrl   = "https://api.mch.weixin.qq.com/pay/unifiedorder"
 	jsCode2SessionUrl = "https://api.weixin.qq.com/sns/jscode2session"
+	refundUrl         = "https://api.mch.weixin.qq.com/secapi/pay/refund"
 )
 
 type Wechat struct {
@@ -100,7 +103,7 @@ const (
 type UnifiedOrderReq struct {
 	XMLName        xml.Name `xml:"xml"`
 	AppID          string   `xml:"appid"`            // 是，微信分配的小程序ID
-	MchID          string   `xml:"mch_id"`           // 是，微信分配的小程序ID
+	MchID          string   `xml:"mch_id"`           // 是，微信支付分配的商户号
 	DeviceInfo     string   `xml:"device_info"`      // 否，自定义参数，可以为终端设备号(门店号或收银设备ID)，PC网页或公众号内支付可以传"WEB"
 	NonceStr       string   `xml:"nonce_str"`        // 是，随机字符串，长度要求在32位以内。推荐随机数生成算法
 	Sign           string   `xml:"sign"`             // 是，通过签名算法计算得出的签名值，详见签名生成算法
@@ -253,6 +256,191 @@ func (wx *Wechat) JsCode2Session(code string) (*jsCode2SessionRes, error) {
 
 	if jsonErr := json.Unmarshal(res, &data); jsonErr != nil {
 		return nil, jsonErr
+	}
+
+	return &data, nil
+}
+
+// ==================== 退款 ====================
+type RefundReq struct {
+	XMLName  xml.Name `xml:"xml"`
+	AppID    string   `xml:"appid"`     // 是，微信分配的小程序ID
+	MchID    string   `xml:"mch_id"`    // 是，微信支付分配的商户号
+	NonceStr string   `xml:"nonce_str"` // 是，随机字符串，长度要求在32位以内。推荐随机数生成算法
+	Sign     string   `xml:"sign"`      // 是，通过签名算法计算得出的签名值，详见签名生成算法
+	SignType SignType `xml:"sign_type"` // 否，通过签名算法计算得出的签名值，详见签名生成算法
+	//TransactionID string   `xml:"transaction_id"` // 微信生成的订单号，在支付通知中有返回
+	OutTradeNo string `xml:"out_trade_no"`
+	/* 是，商户系统内部订单号，要求32个字符内，
+	只能是数字、大小写字母_-|*@ ，且在同一个商户号下唯一。
+	transaction_id、out_trade_no二选一，
+	如果同时存在优先级：transaction_id > out_trade_no
+	*/
+	OutRefundNo   string `xml:"out_refund_no"`   // 是，商户系统内部的退款单号，商户系统内部唯一，只能是数字、大小写字母_-|*@ ，同一退款单号多次请求只退一笔。
+	TotalFee      int64  `xml:"total_fee"`       // 是，订单总金额，单位为分，只能为整数，详见支付金额
+	RefundFee     int64  `xml:"refund_fee"`      // 是，退款总金额，订单总金额，单位为分，只能为整数，详见支付金额
+	RefundFeeType string `xml:"refund_fee_type"` // 否，货币类型，符合ISO 4217标准的三位字母代码，默认人民币：CNY，其他值列表详见货币类型
+	RefundDesc    string `xml:"refund_desc"`
+	/* 否，若商户传入，会在下发给用户的退款消息中体现退款原因
+	注意：若订单退款金额≤1元，且属于部分退款，则不会在退款消息中体现退款原因
+	*/
+	RefundAccount string `xml:"refund_account"`
+	/* 否，仅针对老资金流商户使用
+	REFUND_SOURCE_UNSETTLED_FUNDS---未结算资金退款（默认使用未结算资金退款）
+	REFUND_SOURCE_RECHARGE_FUNDS---可用余额退款
+	*/
+	NotifyUrl string `xml:"notify_url"`
+	/* 否，
+	异步接收微信支付退款结果通知的回调地址，通知URL必须为外网可访问的url，不允许带参数
+	公网域名必须为https，如果是走专线接入，使用专线NAT IP或者私有回调域名可使用http。
+	如果参数中传了notify_url，则商户平台上配置的回调地址将不会生效。
+	*/
+}
+
+type refundRes struct {
+	ReturnCode PaymentNotifyCode `xml:"return_code"` //SUCCESS/FAIL
+	ReturnMsg  string            `xml:"return_msg"`
+	/* 返回信息，如非空，为错误原因
+	签名失败
+	参数格式校验错误
+	*/
+	ResultCode string `xml:"result_code"`
+	/*业务结果
+	SUCCESS/FAIL
+	SUCCESS退款申请接收成功，结果通过退款查询接口查询
+	FAIL 提交业务失败
+	*/
+	ErrCode             string `xml:"err_code"`
+	ErrCodeDes          string `xml:"err_code_des"`
+	AppID               string `xml:"appid"`
+	MchID               string `xml:"mch_id"`
+	NonceStr            string `xml:"nonce_str"`
+	Sign                string `xml:"sign"`
+	TransactionID       string `xml:"transaction_id"`
+	OutTradeNo          string `xml:"out_trade_no"`
+	OutRefundNo         string `xml:"out_refund_no"`
+	RefundID            string `xml:"refund_id"`
+	RefundFee           int64  `xml:"refund_fee"`
+	SettlementRefundFee int64  `xml:"settlement_refund_fee"`
+	TotalFee            int64  `xml:"total_fee"`
+	SettlementTotalFee  int64  `xml:"settlement_total_fee"`
+	FeeType             string `xml:"fee_type"`
+	CashFee             int64  `xml:"cash_fee"`
+	CashFeeType         string `xml:"cash_fee_type"`
+	CashRefundFee       int64  `xml:"cash_refund_fee"`
+	CouponRefundFee     int64  `xml:"coupon_refund_fee"`
+	CouponRefundCount   int64  `xml:"coupon_refund_count"`
+}
+
+func (wx *Wechat) Refund(req *RefundReq, certKey, cert string) (*refundRes, error) {
+	req.AppID = wx.AppID
+
+	xmlParamsByte, xmlErr := xml.Marshal(req)
+	if xmlErr != nil {
+		return nil, xmlErr
+	}
+
+	res, httpErr := net.HttpPost(refundUrl, string(xmlParamsByte), nil, true, cert, certKey)
+	if httpErr != nil {
+		return nil, httpErr
+	}
+
+	var data refundRes
+	if xmlErr := xml.Unmarshal(res, &data); xmlErr != nil {
+		return nil, xmlErr
+	}
+
+	return &data, nil
+}
+
+// ==================== 退款通知 ====================
+type RefundNotifyReq struct {
+	ReturnCode string `xml:"return_code" validate:"required"`
+	ReturnMsg  string `xml:"return_msg"`
+	AppID      string `xml:"appid" validate:"required"`
+	MchID      string `xml:"mch_id" validate:"required"`
+	NonceStr   string `xml:"nonce_str" validate:"required"`
+	ReqInfo    string `xml:"req_info" validate:"required"`
+}
+
+type RefundStatus string
+
+const (
+	RefundStatusSuccess     = RefundStatus("SUCCESS")
+	RefundStatusChange      = RefundStatus("CHANGE")
+	RefundStatusRefundClose = RefundStatus("REFUNDCLOSE")
+)
+
+type refundReqInfo struct {
+	TransactionID       string       `xml:"transaction_id" validate:"required"`
+	OutTradeNo          string       `xml:"out_trade_no"  validate:"required"`
+	RefundID            string       `xml:"refund_id" validate:"required"`
+	OutRefundNo         string       `xml:"out_refund_no"  validate:"required"`
+	TotalFee            int64        `xml:"total_fee" validate:"required"`
+	SettlementTotalFee  int64        `xml:"settlement_total_fee"` //当该订单有使用非充值券时，返回此字段。应结订单金额=订单金额-非充值代金券金额，应结订单金额<=订单金额。
+	RefundFee           int64        `xml:"refund_fee" validate:"required"`
+	SettlementRefundFee int64        `xml:"settlement_refund_fee" validate:"required"` //退款金额=申请退款金额-非充值代金券退款金额，退款金额<=申请退款金额
+	RefundStatus        RefundStatus `xml:"refund_status" validate:"required"`
+	SuccessTime         string       `xml:"success_time"` //资金退款至用户账号的时间，格式2017-12-15 09:46:01
+	RefundRecvAccout    string       `xml:"refund_recv_accout" validate:"required"`
+	/*退款入账账户
+	取当前退款单的退款入账方
+	1）退回银行卡：
+	{银行名称}{卡类型}{卡尾号}
+	2）退回支付用户零钱:
+	支付用户零钱
+	3）退还商户:
+	商户基本账户
+	商户结算银行账户
+	4）退回支付用户零钱通:
+	支付用户零钱通
+	*/
+	RefundAccount string `xml:"refund_account" validate:"required"`
+	/*退款资金来源
+	REFUND_SOURCE_RECHARGE_FUNDS 可用余额退款/基本账户
+	REFUND_SOURCE_UNSETTLED_FUNDS 未结算资金退款
+	*/
+	RefundRequestSource string `xml:"refund_request_source" validate:"required"`
+	/*退款发起来源
+	API 接口
+	VENDOR_PLATFORM 商户平台
+	*/
+}
+
+type NotifyCode string
+
+const (
+	NotifySuccessReturnCode = NotifyCode("SUCCESS")
+	NotifySuccessReturnMsg  = "OK"
+
+	NotifyFailReturnCode = NotifyCode("FAIL")
+)
+
+type NotifyRes struct {
+	XMLName    xml.Name   `xml:"xml"`
+	ReturnCode NotifyCode `xml:"return_code"`
+	ReturnMsg  string     `xml:"return_msg"`
+}
+
+func (wx *Wechat) DecodeRefundReqInfo(reqInfo, apiKey string) (*refundReqInfo, error) {
+	chiper, base64Err := encode.Base64Decoded(reqInfo)
+	if base64Err != nil {
+		return nil, base64Err
+	}
+	secret, md5Err := encrypt.MD5(apiKey)
+	if md5Err != nil {
+		return nil, md5Err
+	}
+
+	aes := encrypt.NewAES()
+	res, aesErr := aes.Decrypt([]byte(chiper), secret)
+	if aesErr != nil {
+		return nil, aesErr
+	}
+
+	var data refundReqInfo
+	if xmlErr := xml.Unmarshal(res, &data); xmlErr != nil {
+		return nil, xmlErr
 	}
 
 	return &data, nil
