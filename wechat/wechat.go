@@ -10,6 +10,7 @@ import (
 	"github.com/MangoMilk/go-kit/encrypt"
 	"github.com/MangoMilk/go-kit/net"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -21,14 +22,28 @@ const (
 )
 
 type Wechat struct {
-	AppID     string
-	AppSecret string
+	AppID        string
+	AppSecret    string
+	ZeroValueMap map[string]interface{} // use for gen sign
 }
 
 func NewWechat(appID, appSecret string) *Wechat {
 	return &Wechat{
-		AppID:     appID,
-		AppSecret: appSecret,
+		AppID:        appID,
+		AppSecret:    appSecret,
+		ZeroValueMap: make(map[string]interface{}),
+	}
+}
+
+// ==================== 零值处理 ====================
+func (wx *Wechat) ZeroValueProcess(res []byte) {
+	wx.ZeroValueMap = make(map[string]interface{})
+	re, _ := regexp.Compile(`\<(.+)\>0`)
+	matchRes := re.FindAllStringSubmatch(string(res), -1)
+	if len(matchRes) > 0 {
+		for _, match := range matchRes {
+			wx.ZeroValueMap[match[1]] = 1
+		}
 	}
 }
 
@@ -59,10 +74,12 @@ func (wx *Wechat) GenSign(body interface{}, apiKey string) string {
 	// 生成签名（sign）和请求参数（xml）
 	var dataKeys []string
 	for k, v := range data {
-		if !v.IsZero() {
+		_, inZeroValueMap := wx.ZeroValueMap[k]
+		if !v.IsZero() || inZeroValueMap {
 			dataKeys = append(dataKeys, k)
 		}
 	}
+
 	sort.Strings(dataKeys)
 
 	// joint data
@@ -344,6 +361,11 @@ func (wx *Wechat) Refund(req *RefundReq, certKey, cert string) (*refundRes, erro
 	if httpErr != nil {
 		return nil, httpErr
 	}
+
+	fmt.Println(string(res))
+	fmt.Println(fmt.Sprintf("%+v", string(res)))
+
+	wx.ZeroValueProcess(res)
 
 	var data refundRes
 	if xmlErr := xml.Unmarshal(res, &data); xmlErr != nil {

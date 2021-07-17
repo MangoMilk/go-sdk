@@ -1,6 +1,8 @@
 package wechat
 
 import (
+	"encoding/xml"
+	"fmt"
 	"github.com/MangoMilk/go-kit/encrypt"
 	"strconv"
 	"testing"
@@ -9,11 +11,18 @@ import (
 
 var (
 	wx *Wechat
+
+	appID           = ""
+	appSecret       = ""
+	mchID           = ""
+	apiKey          = ""
+	notifyUrl       = ""
+	refundNotifyUrl = ""
+	certKey         = ""
+	cert            = ""
 )
 
 func setup() {
-	appID := ""
-	appSecret := ""
 	wx = NewWechat(appID, appSecret)
 }
 
@@ -30,7 +39,7 @@ func TestMain(m *testing.M) {
 func TestUnifiedOrder(t *testing.T) {
 	nonceStr, _ := encrypt.MD5(strconv.FormatInt(time.Now().Unix(), 10))
 	req := UnifiedOrderReq{
-		MchID:          "",
+		MchID:          mchID,
 		NonceStr:       nonceStr,
 		Body:           "xx",
 		OutTradeNo:     "12312",
@@ -38,7 +47,7 @@ func TestUnifiedOrder(t *testing.T) {
 		SpbillCreateIP: "127.0.0.1",
 		//TimeStart : time.Now().Format(util.SecondSeamlessDateFormat),
 		//TimeExpire : time.Now().Add(time.Minute * 16).Format(util.SecondSeamlessDateFormat),
-		NotifyUrl: "https://127.0.0.1/xx/notify",
+		NotifyUrl: notifyUrl,
 		TradeType: "JSAPI",
 		OpenID:    "ad23sd12",
 	}
@@ -66,24 +75,55 @@ func TestJsCode2Session(t *testing.T) {
 func TestRefund(t *testing.T) {
 	nonceStr, _ := encrypt.MD5(strconv.FormatInt(time.Now().Unix(), 10))
 	req := RefundReq{
-		MchID:       "",
+		MchID:       mchID,
 		NonceStr:    nonceStr,
-		OutTradeNo:  "12312",
-		OutRefundNo: "12312",
+		OutTradeNo:  "123",
+		OutRefundNo: strconv.Itoa(int(time.Now().Unix())),
 		TotalFee:    1,
 		RefundFee:   1,
-		NotifyUrl:   "https://127.0.0.1/xx/notify",
+		NotifyUrl:   refundNotifyUrl,
 		//RefundDesc:"主动退款"
 	}
 
-	apiKey := ""
 	req.Sign = wx.GenSign(req, apiKey)
-	certKey := ""
-	cert := ""
 	res, err := wx.Refund(&req, certKey, cert)
 	if err != nil {
 		t.Log(err)
 	}
 
 	t.Log(res)
+	fmt.Println(fmt.Sprintf("%+v", res))
+	fmt.Println(res.Sign)
+	fmt.Println(wx.GenSign(*res, apiKey))
+}
+
+func TestGenSign(t *testing.T) {
+	refundXml := []byte(`<xml>
+<return_code><![CDATA[SUCCESS]]></return_code>
+<return_msg><![CDATA[OK]]></return_msg>
+<appid><![CDATA[]]></appid>
+<mch_id><![CDATA[]]></mch_id>
+<nonce_str><![CDATA[xldNakMnWgQtaWfV]]></nonce_str>
+<sign><![CDATA[]]></sign>
+<result_code><![CDATA[SUCCESS]]></result_code>
+<transaction_id><![CDATA[]]></transaction_id>
+<out_trade_no><![CDATA[]]></out_trade_no>
+<out_refund_no><![CDATA[]]></out_refund_no>
+<refund_id><![CDATA[]]></refund_id>
+<refund_channel><![CDATA[]]></refund_channel>
+<refund_fee>1</refund_fee>
+<coupon_refund_fee>0</coupon_refund_fee>
+<total_fee>1</total_fee>
+<cash_fee>1</cash_fee>
+<coupon_refund_count>0</coupon_refund_count>
+<cash_refund_fee>1</cash_refund_fee>
+</xml>`)
+
+	wx.ZeroValueProcess(refundXml)
+	var data refundRes
+	if xmlUnmarshalErr := xml.Unmarshal(refundXml, &data); xmlUnmarshalErr != nil {
+		t.Error(xmlUnmarshalErr)
+	}
+
+	fmt.Println(wx.GenSign(data, apiKey))
 }
