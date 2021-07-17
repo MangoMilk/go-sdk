@@ -7,6 +7,8 @@ github.com/MangoMilk/go-kit v0.0.5 h1:2PA9itqnI2b3Aj/rSkuYpc9m+XK2G4/NHrfRCfGuvJ
 github.com/MangoMilk/go-kit v0.0.5/go.mod h1:ZQ89kFkCSUYKBYF8Jzw5MdM3mftI12cjL6SfFpbTOAM=
 github.com/MangoMilk/go-kit v0.0.6 h1:ia7d0gx/p75FjMhkrc5M3nsO7j3MtkZw1jscwKcfaMc=
 github.com/MangoMilk/go-kit v0.0.6/go.mod h1:ZQ89kFkCSUYKBYF8Jzw5MdM3mftI12cjL6SfFpbTOAM=
+github.com/MangoMilk/go-kit v0.0.8 h1:14s27BV1iYB5IuWR5Kb30L72eyBBVLSDy3LMu/6ZiPo=
+github.com/MangoMilk/go-kit v0.0.8/go.mod h1:ZQ89kFkCSUYKBYF8Jzw5MdM3mftI12cjL6SfFpbTOAM=
 github.com/aliyun/aliyun-oss-go-sdk v1.9.8 h1:BOflvK0Zs/zGmoabyFIzTg5c3kguktWTXEwewwbuba0=
 github.com/aliyun/aliyun-oss-go-sdk v2.1.8+incompatible h1:hLUNPbx10wawWW7DeNExvTrlb90db3UnnNTFKHZEFhE=
 github.com/aliyun/aliyun-oss-go-sdk v2.1.8+incompatible/go.mod h1:T/Aws4fEfogEE9v+HPhhw+CntffsBHJ8nXQCwKr0/g8=

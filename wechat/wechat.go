@@ -432,7 +432,7 @@ func (wx *Wechat) DecodeRefundReqInfo(reqInfo, apiKey string) (*refundReqInfo, e
 		return nil, md5Err
 	}
 
-	aes := encrypt.NewAES()
+	aes := encrypt.NewAES(encrypt.ECB)
 	res, aesErr := aes.Decrypt([]byte(chiper), secret)
 	if aesErr != nil {
 		return nil, aesErr
