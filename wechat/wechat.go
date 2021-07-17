@@ -423,7 +423,7 @@ type NotifyRes struct {
 }
 
 func (wx *Wechat) DecodeRefundReqInfo(reqInfo, apiKey string) (*refundReqInfo, error) {
-	chiper, base64Err := encode.Base64Decoded(reqInfo)
+	cipher, base64Err := encode.Base64Decoded(reqInfo)
 	if base64Err != nil {
 		return nil, base64Err
 	}
@@ -433,7 +433,7 @@ func (wx *Wechat) DecodeRefundReqInfo(reqInfo, apiKey string) (*refundReqInfo, e
 	}
 
 	aes := encrypt.NewAES(encrypt.ECB)
-	res, aesErr := aes.Decrypt([]byte(chiper), secret)
+	res, aesErr := aes.Decrypt([]byte(cipher), secret)
 	if aesErr != nil {
 		return nil, aesErr
 	}
