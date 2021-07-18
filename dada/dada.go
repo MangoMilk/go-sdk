@@ -25,16 +25,17 @@ const (
 	//线上域名
 	onlineDomain = "newopen.imdada.cn"
 
-	getCityUrl         = "/api/cityCode/list"
-	addOrderUrl        = "/api/order/addOrder"
-	reAddOrderUrl      = "/api/order/reAddOrder"
-	queryDeliverFeeUrl = "/api/order/queryDeliverFee"
-	addAfterQueryUrl   = "/api/order/addAfterQuery"
-	queryOrderUrl      = "/api/order/status/query"
-	cancelOrderUrl     = "/api/order/formalCancel"
-	addMerchantUrl     = "/merchantApi/merchant/add"
-	addShopUrl         = "/api/shop/add"
-	confirmMessageUrl  = "/api/message/confirm"
+	getCityUrl           = "/api/cityCode/list"
+	addOrderUrl          = "/api/order/addOrder"
+	reAddOrderUrl        = "/api/order/reAddOrder"
+	queryDeliverFeeUrl   = "/api/order/queryDeliverFee"
+	addAfterQueryUrl     = "/api/order/addAfterQuery"
+	queryOrderUrl        = "/api/order/status/query"
+	cancelOrderUrl       = "/api/order/formalCancel"
+	confirmOrderGoodsUrl = "/api/order/confirm/goods"
+	addMerchantUrl       = "/merchantApi/merchant/add"
+	addShopUrl           = "/api/shop/add"
+	confirmMessageUrl    = "/api/message/confirm"
 )
 
 type CancelFrom int64
@@ -772,6 +773,30 @@ func (dd *Dada) ConfirmMessage(req *NotifyConfirmReq) (*baseRes, error) {
 	}
 
 	data, httpErr := net.HttpPost(dd.genUrl(confirmMessageUrl), *ddReq, dd.HttpHeader, false, "", "")
+	if httpErr != nil {
+		return nil, reqErr
+	}
+
+	var ddRes baseRes
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, reqErr
+	}
+
+	return &ddRes, nil
+}
+
+// ==================== 确认妥投异常之物品返回完成 ====================
+type ConfirmOrderGoodsReq struct {
+	OrderID string `json:"order_id"` // 是	第三方订单ID
+}
+
+func (dd *Dada) ConfirmOrderGoods(orderID string) (*baseRes, error) {
+	ddReq, reqErr := dd.genBaseReq(&ConfirmOrderGoodsReq{OrderID: orderID})
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	data, httpErr := net.HttpPost(dd.genUrl(confirmOrderGoodsUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
 		return nil, reqErr
 	}
