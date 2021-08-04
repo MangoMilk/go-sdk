@@ -593,7 +593,7 @@ func (dd *Dada) AddMerchant(req *AddMerchantReq) (*baseRes, string, error) {
 
 // ==================== 创建门店 ====================
 type AddShopReq struct {
-	shops []Shop
+	Shops []Shop
 }
 
 type Shop struct {
@@ -638,7 +638,7 @@ type failedItem struct {
 }
 
 func (dd *Dada) AddShop(req *AddShopReq) (*baseRes, *addShopRes, error) {
-	ddReq, reqErr := dd.genBaseReq(req.shops)
+	ddReq, reqErr := dd.genBaseReq(req.Shops)
 	if reqErr != nil {
 		return nil, nil, reqErr
 	}
