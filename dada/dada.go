@@ -35,6 +35,7 @@ const (
 	confirmOrderGoodsUrl = "/api/order/confirm/goods"
 	addMerchantUrl       = "/merchantApi/merchant/add"
 	addShopUrl           = "/api/shop/add"
+	updateShopUrl        = "/api/shop/update"
 	confirmMessageUrl    = "/api/message/confirm"
 )
 
@@ -678,6 +679,41 @@ func (dd *Dada) AddShop(req *AddShopReq) (*baseRes, *addShopRes, error) {
 	}
 
 	return &ddRes, &res, nil
+}
+
+// ==================== 更新门店 ====================
+type UpdateShopReq struct {
+	OriginShopID   string  `json:"origin_shop_id"`  //	是	门店编码
+	NewShopID      string  `json:"new_shop_id"`     //	否	新的门店编码
+	StationName    string  `json:"station_name"`    //	否	门店名称
+	Business       int64   `json:"business"`        //	否	业务类型(食品小吃-1,饮料-2,鲜花绿植-3,文印票务-8,便利店-9,水果生鲜-13,同城电商-19, 医药-20,蛋糕-21,酒品-24,小商品市场-25,服装-26,汽修零配-27,数码家电-28,小龙虾-29,个人-50,火锅-51,个护美妆-53、母婴-55,家居家纺-57,手机-59,家装-61,其他-5)
+	CityName       string  `json:"city_name"`       //	否	城市名称(如,上海)
+	AreaName       string  `json:"area_name"`       //	否	区域名称(如,浦东新区)
+	StationAddress string  `json:"station_address"` //	否	门店地址
+	Lng            float64 `json:"lng"`             //	否	门店经度
+	Lat            float64 `json:"lat"`             //	否	门店纬度
+	ContactName    string  `json:"contact_name"`    //	否	联系人姓名
+	Phone          string  `json:"phone"`           //	否	联系人电话
+	Status         int64   `json:"status"`          //	否	门店状态（1-门店激活，0-门店下线）
+}
+
+func (dd *Dada) UpdateShop(req *UpdateShopReq) (*baseRes, error) {
+	ddReq, reqErr := dd.genBaseReq(req)
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	data, httpErr := net.HttpPost(dd.genUrl(updateShopUrl), *ddReq, dd.HttpHeader, false, "", "")
+	if httpErr != nil {
+		return nil, reqErr
+	}
+
+	var ddRes baseRes
+	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
+		return nil, reqErr
+	}
+
+	return &ddRes, nil
 }
 
 // ==================== 订单状态通知 ====================

@@ -19,6 +19,8 @@ const (
 	unifiedOrderUrl   = "https://api.mch.weixin.qq.com/pay/unifiedorder"
 	jsCode2SessionUrl = "https://api.weixin.qq.com/sns/jscode2session"
 	refundUrl         = "https://api.mch.weixin.qq.com/secapi/pay/refund"
+	accessTokenUrl    = "https://api.weixin.qq.com/cgi-bin/token"
+	wxACodeUnLimitUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit"
 )
 
 type Wechat struct {
@@ -466,4 +468,83 @@ func (wx *Wechat) DecodeRefundReqInfo(reqInfo, apiKey string) (*refundReqInfo, e
 	}
 
 	return &data, nil
+}
+
+// ==================== 获取access_token ====================
+type accessTokenRes struct {
+	ErrCode     float64 `json:"errcode"`
+	ErrMsg      string  `json:"errmsg"`
+	ExpiresIn   float64 `json:"expires_in"`   // 凭证有效时间，单位：秒。目前是7200秒之内的值。
+	AccessToken string  `json:"access_token"` // 获取到的凭证
+}
+
+func (wx *Wechat) GetAccessToken() (*accessTokenRes, error) {
+	queryParam := "?grant_type=client_credential&appid=" + wx.AppID + "&secret=" + wx.AppSecret
+	res, httpErr := net.HttpGet(accessTokenUrl+queryParam, nil)
+	if httpErr != nil {
+		return nil, httpErr
+	}
+
+	var data accessTokenRes
+
+	if jsonErr := json.Unmarshal(res, &data); jsonErr != nil {
+		return nil, jsonErr
+	}
+
+	return &data, nil
+}
+
+// ==================== 获取二维码 ====================
+type GetWxACodeUnLimitReq struct {
+	Scene string `json:"scene"`
+	/* 是
+	最大32个可见字符，只支持数字，
+	大小写英文以及部分特殊字符：!#$&'()*+,/:;=?@-._~，
+	其它字符请自行编码为合法字符（因不支持%，中文无法使用 urlencode 处理，
+	请使用其他编码方式）
+	*/
+	Page string `json:"page"`
+	/* 否
+	必须是已经发布的小程序存在的页面（否则报错），
+	例如 pages/index/index, 根路径前不要填加 /,
+	不能携带参数（参数请放在scene字段里），
+	如果不填写这个字段，默认跳主页面
+	*/
+	Width     int64 `json:"width"`      // 否 二维码的宽度，单位 px，最小 280px，最大 1280px
+	AutoColor bool  `json:"auto_color"` // 否 自动配置线条颜色，如果颜色依然是黑色，则说明不建议配置主色调，默认 false
+	LineColor Color `json:"line_color"` // 否 auto_color 为 false 时生效，使用 rgb 设置颜色 例如 {"r":"xxx","g":"xxx","b":"xxx"} 十进制表示
+	IsHyaline bool  `json:"is_hyaline"` // 否 是否需要透明底色，为 true 时，生成透明底色的小程序
+}
+
+type Color struct {
+	R string `json:"r"`
+	G string `json:"g"`
+	B string `json:"b"`
+}
+
+type getWxACodeUnLimitRes struct {
+	ErrCode float64 `json:"errcode"`
+	ErrMsg  string  `json:"errmsg"`
+	Qrcode  []byte  `json:"qrcode"`
+}
+
+func (wx *Wechat) GetWxACodeUnLimit(accessToken string, req *GetWxACodeUnLimitReq) (*getWxACodeUnLimitRes, error) {
+	queryParam := "?access_token=" + accessToken
+	res, httpErr := net.HttpPost(wxACodeUnLimitUrl+queryParam, *req, nil, false, "", "")
+	if httpErr != nil {
+		return nil, httpErr
+	}
+
+	fmt.Println("============qrcode========")
+	fmt.Println(string(res))
+	var data getWxACodeUnLimitRes
+
+	if jsonErr := json.Unmarshal(res, &data); jsonErr != nil {
+		return nil, jsonErr
+	}
+
+	return &data, nil
+	//	ioutil.WriteFile("./output.jpg", []byte(qrcode), 0666)
+	//
+	//	return outputer.Json(Success, SuccessMsg, qrcode)
 }
