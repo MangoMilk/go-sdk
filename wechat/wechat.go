@@ -523,9 +523,10 @@ type Color struct {
 }
 
 type getWxACodeUnLimitRes struct {
-	ErrCode float64 `json:"errcode"`
-	ErrMsg  string  `json:"errmsg"`
-	Qrcode  []byte  `json:"qrcode"`
+	ErrCode     float64 `json:"errcode"`
+	ErrMsg      string  `json:"errmsg"`
+	ContentType string  `json:"contentType"`
+	Buffer      []byte  `json:"buffer"`
 }
 
 func (wx *Wechat) GetWxACodeUnLimit(accessToken string, req *GetWxACodeUnLimitReq) (*getWxACodeUnLimitRes, error) {
@@ -535,16 +536,11 @@ func (wx *Wechat) GetWxACodeUnLimit(accessToken string, req *GetWxACodeUnLimitRe
 		return nil, httpErr
 	}
 
-	fmt.Println("============qrcode========")
-	fmt.Println(string(res))
 	var data getWxACodeUnLimitRes
-
+	// 不是json格式证明成功，返回图片buff
 	if jsonErr := json.Unmarshal(res, &data); jsonErr != nil {
-		return nil, jsonErr
+		data.Buffer = res
 	}
 
 	return &data, nil
-	//	ioutil.WriteFile("./output.jpg", []byte(qrcode), 0666)
-	//
-	//	return outputer.Json(Success, SuccessMsg, qrcode)
 }

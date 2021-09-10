@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/MangoMilk/go-kit/encrypt"
+	"github.com/MangoMilk/go-sdk/aliyun"
 	"strconv"
 	"testing"
 	"time"
@@ -126,4 +127,45 @@ func TestGenSign(t *testing.T) {
 	}
 
 	fmt.Println(wx.GenSign(data, apiKey))
+}
+
+func TestGetWxACodeUnLimit(t *testing.T) {
+
+	//fmt.Println(url.QueryEscape("store_id=1#from=store_code"))
+	//return
+
+	accessTokenInfo, getTokenErr := wx.GetAccessToken()
+	if getTokenErr != nil {
+		t.Error(getTokenErr)
+	}
+
+	t.Log(accessTokenInfo)
+	accessToken := accessTokenInfo.AccessToken
+
+	req := GetWxACodeUnLimitReq{
+		Scene: "store_id=1#from=store_code", // 不支持 & 符号，文档坑人
+		Page:  "pages/home/home",
+	}
+	qrcodeInfo, getQrcodeErr := wx.GetWxACodeUnLimit(accessToken, &req)
+	if getQrcodeErr != nil {
+		t.Error(getQrcodeErr)
+	}
+
+	//t.Log(qrcodeInfo)
+
+	// remote save
+	conf := aliyun.OssConfig{
+		AccessKeyID:     "",
+		AccessKeySecret: "",
+		Endpoint:        "",
+		Bucket:          "",
+	}
+	oss, _ := aliyun.NewOssStore(&conf)
+	oss.UploadBytes(qrcodeInfo.Buffer, "test/qrcode.jpeg")
+
+	// local save
+	//f, _ := os.Create("./qrcode-10228.jpeg")
+	//f.Write(qrcodeInfo.Buffer)
+	//f.Close()
+
 }
