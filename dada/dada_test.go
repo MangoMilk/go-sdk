@@ -29,10 +29,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetCity(t *testing.T) {
-	ddRes, res,err := dada.GetCity()
-	if err!=nil{
+	ddRes, res, err := dada.GetCity()
+	if err != nil {
 		fmt.Println(err)
-	}else{
+	} else {
 		if ddRes.Code != 0 || ddRes.Status != "success" {
 			fmt.Println(ddRes)
 		}
@@ -43,24 +43,25 @@ func TestGetCity(t *testing.T) {
 
 func TestAddOrder(t *testing.T) {
 	req := AddOrderReq{
-		ShopNo:          shopNo,                            // 是	门店编号，门店创建后可在门店列表和单页查看
-		OriginID:        "1621506287000",                   // 是	第三方订单ID
-		CityCode:        "020",                             // 是	订单所在城市的code（查看各城市对应的code值）
-		CargoPrice:      10.00,                             // 是	订单金额（单位：元）
-		IsPrepay:        0,                                 // 是	是否需要垫付 1:是 0:否 (垫付订单金额，非运费)
-		ReceiverName:    "vincent",                         // 是	收货人姓名
-		ReceiverAddress: "广州市天河区花城广场",                      // 是	收货人地址
-		ReceiverLat:     23.123641,                         // 是	收货人地址纬度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器）
-		ReceiverLng:     113.345769,                        // 是	收货人地址经度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器)
-		Callback:        "http://127.0.0.1/v1/dada/notify", // 是	回调URL（查看回调说明）
-		CargoWeight:     0.5,                               // 是	订单重量（单位：Kg）
-		ReceiverPhone:   "11111111111",                     // 是	收货人手机号（手机号和座机号必填一项）
+		ShopNo:             shopNo,                             // 是	门店编号，门店创建后可在门店列表和单页查看
+		OriginID:           "1626071471",                       // 是	第三方订单ID
+		CityCode:           "020",                              // 是	订单所在城市的code（查看各城市对应的code值）
+		CargoPrice:         10.00,                              // 是	订单金额（单位：元）
+		IsPrepay:           0,                                  // 是	是否需要垫付 1:是 0:否 (垫付订单金额，非运费)
+		ReceiverName:       "vv",                               // 是	收货人姓名
+		ReceiverAddress:    "广州市天河区花城广场",                       // 是	收货人地址
+		ReceiverLat:        23.123641,                          // 是	收货人地址纬度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器）
+		ReceiverLng:        113.345769,                         // 是	收货人地址经度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器)
+		Callback:           "http://127.0.0.1/xx/xx/xx/notify", // 是	回调URL（查看回调说明）
+		CargoWeight:        0.5,                                // 是	订单重量（单位：Kg）
+		ReceiverPhone:      "11111111111",                      // 是	收货人手机号（手机号和座机号必填一项）
+		IsFinishCodeNeeded: IsFinishCodeNeededYes,
 	}
 
-	ddRes, res,err := dada.AddOrder(&req)
-	if err!=nil{
+	ddRes, res, err := dada.AddOrder(&req)
+	if err != nil {
 		fmt.Println(err)
-	}else {
+	} else {
 		if ddRes.Code != 0 || ddRes.Status != "success" {
 			fmt.Println(ddRes)
 		}
@@ -77,19 +78,19 @@ func TestQueryDeliverFee(t *testing.T) {
 		CityCode:        "020",           // 是	订单所在城市的code（查看各城市对应的code值）
 		CargoPrice:      10.00,           // 是	订单金额（单位：元）
 		IsPrepay:        0,               // 是	是否需要垫付 1:是 0:否 (垫付订单金额，非运费)
-		ReceiverName:    "vincent",       // 是	收货人姓名
+		ReceiverName:    "vv",            // 是	收货人姓名
 		ReceiverAddress: "广州市天河区花城广场",    // 是	收货人地址
 		//ReceiverLat:     23.123641,                         // 是	收货人地址纬度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器）
 		//ReceiverLng:     113.345769,                        // 是	收货人地址经度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器)
-		Callback:      "http://127.0.0.1/v1/dada/notify", // 是	回调URL（查看回调说明）
-		CargoWeight:   0.5,                               // 是	订单重量（单位：Kg）
-		ReceiverPhone: "11111111111",                     // 是	收货人手机号（手机号和座机号必填一项）
+		Callback:      "http://127.0.0.1/xx/xx/notify", // 是	回调URL（查看回调说明）
+		CargoWeight:   0.5,                             // 是	订单重量（单位：Kg）
+		ReceiverPhone: "11111111111",                   // 是	收货人手机号（手机号和座机号必填一项）
 	}
 
-	ddRes, res,err := dada.QueryDeliverFee(&req)
-	if err!=nil{
+	ddRes, res, err := dada.QueryDeliverFee(&req)
+	if err != nil {
 		fmt.Println(err)
-	}else {
+	} else {
 		if ddRes.Code != 0 || ddRes.Status != "success" {
 			fmt.Println(ddRes)
 		}
@@ -99,10 +100,10 @@ func TestQueryDeliverFee(t *testing.T) {
 }
 
 func TestQueryOrder(t *testing.T) {
-	ddRes, res,err := dada.QueryOrder("1621506287000")
-	if err!=nil{
+	ddRes, res, err := dada.QueryOrder("1621506287000")
+	if err != nil {
 		fmt.Println(err)
-	}else {
+	} else {
 		if ddRes.Code != 0 || ddRes.Status != "success" {
 			fmt.Println(ddRes)
 		}
@@ -116,10 +117,10 @@ func TestCancelOrder(t *testing.T) {
 		CancelReasonID: CancelReasonNotNeed,
 	}
 
-	ddRes, res,err := dada.CancelOrder(&req)
-	if err!=nil{
+	ddRes, res, err := dada.CancelOrder(&req)
+	if err != nil {
 		fmt.Println(err)
-	}else {
+	} else {
 		if ddRes.Code != 0 || ddRes.Status != "success" {
 			fmt.Println(ddRes)
 		}
@@ -146,7 +147,7 @@ func TestAddShop(t *testing.T) {
 
 	// 19 53 5
 	req := AddShopReq{
-		shops: []Shop{
+		Shops: []Shop{
 			{
 				StationName:    "永旺梦乐城（番禺店）",
 				Business:       19,
@@ -155,17 +156,17 @@ func TestAddShop(t *testing.T) {
 				StationAddress: "广东省广州市番禺区亚运大道1号",
 				Lng:            0,
 				Lat:            0,
-				ContactName:    "Y先生",
+				ContactName:    "D先生",
 				Phone:          "13412345678",
 				OriginShopID:   "10000001",
 			},
 		},
 	}
 
-	ddRes, res,err := dada.AddShop(&req)
-	if err!=nil{
+	ddRes, res, err := dada.AddShop(&req)
+	if err != nil {
 		fmt.Println(err)
-	}else {
+	} else {
 		if ddRes.Code != 0 || ddRes.Status != "success" {
 			fmt.Println(ddRes)
 		}
@@ -173,5 +174,74 @@ func TestAddShop(t *testing.T) {
 		fmt.Println(res)
 		//fmt.Println(res.FailedList)
 		//fmt.Println(res.SuccessList)
+	}
+}
+
+func TestUpdateShop(t *testing.T) {
+	req := UpdateShopReq{
+		StationName:    "永旺梦乐城（番禺店）",
+		Business:       19,
+		CityName:       "广州",
+		AreaName:       "番禺区",
+		StationAddress: "广东省广州市番禺区亚运大道1号",
+		Lng:            0,
+		Lat:            0,
+		ContactName:    "D先生",
+		Phone:          "13412345678",
+		OriginShopID:   "10000001",
+	}
+
+	ddRes, err := dada.UpdateShop(&req)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		if ddRes.Code != 0 || ddRes.Status != "success" {
+			fmt.Println(ddRes)
+		}
+
+		fmt.Println(ddRes)
+		//fmt.Println(res.FailedList)
+		//fmt.Println(res.SuccessList)
+	}
+}
+
+func TestReAddOrder(t *testing.T) {
+	req := ReAddOrderReq{
+		ShopNo:             shopNo,                             // 是	门店编号，门店创建后可在门店列表和单页查看
+		OriginID:           "1626071471",                       // 是	第三方订单ID
+		CityCode:           "020",                              // 是	订单所在城市的code（查看各城市对应的code值）
+		CargoPrice:         10.00,                              // 是	订单金额（单位：元）
+		IsPrepay:           0,                                  // 是	是否需要垫付 1:是 0:否 (垫付订单金额，非运费)
+		ReceiverName:       "vv",                               // 是	收货人姓名
+		ReceiverAddress:    "广州市天河区花城广场",                       // 是	收货人地址
+		ReceiverLat:        23.123641,                          // 是	收货人地址纬度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器）
+		ReceiverLng:        113.345769,                         // 是	收货人地址经度（高德坐标系，若是其他地图经纬度需要转化成高德地图经纬度，高德地图坐标拾取器)
+		Callback:           "http://127.0.0.1/v1/xx/xx/notify", // 是	回调URL（查看回调说明）
+		CargoWeight:        0.5,                                // 是	订单重量（单位：Kg）
+		ReceiverPhone:      "11111111111",                      // 是	收货人手机号（手机号和座机号必填一项）
+		IsFinishCodeNeeded: IsFinishCodeNeededYes,
+	}
+
+	ddRes, res, err := dada.ReAddOrder(&req)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		if ddRes.Code != 0 || ddRes.Status != "success" {
+			fmt.Println(ddRes)
+		}
+
+		fmt.Println(res)
+	}
+
+}
+
+func TestConfirmOrderGoods(t *testing.T) {
+	ddRes, err := dada.ConfirmOrderGoods("")
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		if ddRes.Code != 0 || ddRes.Status != "success" {
+			fmt.Println(ddRes)
+		}
 	}
 }
