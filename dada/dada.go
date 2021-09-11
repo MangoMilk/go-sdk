@@ -169,12 +169,12 @@ func (dd *Dada) GetCity() (*baseRes, []*getCityRes, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(getCityUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, jsonErr
 	}
 
 	result := ddRes.Result.([]interface{})
@@ -261,12 +261,12 @@ func (dd *Dada) AddOrder(req *AddOrderReq) (*baseRes, *addOrderRes, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(addOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, jsonErr
 	}
 
 	var res addOrderRes
@@ -333,12 +333,12 @@ func (dd *Dada) ReAddOrder(req *ReAddOrderReq) (*baseRes, *reAddOrderRes, error)
 
 	data, httpErr := net.HttpPost(dd.genUrl(reAddOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, jsonErr
 	}
 
 	var res reAddOrderRes
@@ -405,12 +405,12 @@ func (dd *Dada) QueryDeliverFee(req *QueryDeliverFeeReq) (*baseRes, *queryDelive
 
 	data, httpErr := net.HttpPost(dd.genUrl(queryDeliverFeeUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, jsonErr
 	}
 
 	var res queryDeliverFeeRes
@@ -432,12 +432,12 @@ func (dd *Dada) AddAfterQuery(deliveryNo string) (*baseRes, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(addAfterQueryUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, reqErr
+		return nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, reqErr
+		return nil, jsonErr
 	}
 
 	return &ddRes, nil
@@ -500,12 +500,12 @@ func (dd *Dada) QueryOrder(orderID string) (*baseRes, *queryOrderRes, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(queryOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, jsonErr
 	}
 
 	var res queryOrderRes
@@ -548,12 +548,12 @@ func (dd *Dada) CancelOrder(req *CancelOrderReq) (*baseRes, *cancelOrderRes, err
 
 	data, httpErr := net.HttpPost(dd.genUrl(cancelOrderUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, nil, reqErr
+		return nil, nil, jsonErr
 	}
 
 	var res cancelOrderRes
@@ -581,12 +581,12 @@ func (dd *Dada) AddMerchant(req *AddMerchantReq) (*baseRes, string, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(addMerchantUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, "", reqErr
+		return nil, "", httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, "", reqErr
+		return nil, "", jsonErr
 	}
 
 	return &ddRes, strconv.FormatInt(ddRes.Result.(int64), 10), nil
@@ -705,12 +705,12 @@ func (dd *Dada) UpdateShop(req *UpdateShopReq) (*baseRes, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(updateShopUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, reqErr
+		return nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, reqErr
+		return nil, jsonErr
 	}
 
 	return &ddRes, nil
@@ -810,12 +810,12 @@ func (dd *Dada) ConfirmMessage(req *NotifyConfirmReq) (*baseRes, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(confirmMessageUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, reqErr
+		return nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, reqErr
+		return nil, jsonErr
 	}
 
 	return &ddRes, nil
@@ -834,12 +834,12 @@ func (dd *Dada) ConfirmOrderGoods(orderID string) (*baseRes, error) {
 
 	data, httpErr := net.HttpPost(dd.genUrl(confirmOrderGoodsUrl), *ddReq, dd.HttpHeader, false, "", "")
 	if httpErr != nil {
-		return nil, reqErr
+		return nil, httpErr
 	}
 
 	var ddRes baseRes
 	if jsonErr := json.Unmarshal(data, &ddRes); jsonErr != nil {
-		return nil, reqErr
+		return nil, jsonErr
 	}
 
 	return &ddRes, nil
