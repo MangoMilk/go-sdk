@@ -157,10 +157,21 @@ func Withdraw(req *WithdrawReq) (*withdrawRes, error) {
 }
 
 // ==================== 二级商户查询提现状态(微信支付提现单号查询) ====================
+type WithdrawStatus string
+
+const (
+	WithdrawStatusCreateSuccess = WithdrawStatus("CREATE_SUCCESS") //受理成功
+	WithdrawStatusSuccess       = WithdrawStatus("SUCCESS")        //提现成功
+	WithdrawStatusFail          = WithdrawStatus("FAIL")           //提现失败
+	WithdrawStatusRefund        = WithdrawStatus("REFUND")         //提现退票
+	WithdrawStatusClose         = WithdrawStatus("CLOSE")          //关单
+	WithdrawStatusInit          = WithdrawStatus("INIT")           //业务单已创建
+)
+
 type queryWithdrawRes struct {
-	SubMchID string `json:"sub_mchid"` //二级商户号	[1,32]	是	电商平台二级商户号，由微信支付生成并下发。示例值： 1900000109
-	SpMchID  string `json:"sp_mchid"`  //电商平台商户号	[1, 32]	是	电商平台商户号。示例值：1800000123
-	Status   string `json:"status"`
+	SubMchID string         `json:"sub_mchid"` //二级商户号	[1,32]	是	电商平台二级商户号，由微信支付生成并下发。示例值： 1900000109
+	SpMchID  string         `json:"sp_mchid"`  //电商平台商户号	[1, 32]	是	电商平台商户号。示例值：1800000123
+	Status   WithdrawStatus `json:"status"`
 	/*提现单状态	[1,16]	是	枚举值：
 	CREATE_SUCCESS：受理成功
 	SUCCESS：提现成功

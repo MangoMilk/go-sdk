@@ -21,8 +21,16 @@ type ProfitSharingReq struct {
 	*/
 }
 
+type ReceiverType string
+
+const (
+	ReceiverTypeMerchantID        = ReceiverType("MERCHANT_ID")         //商户
+	ReceiverTypePersonamOpenID    = ReceiverType("PERSONAL_OPENID")     //个人
+	ReceiverTypePersonamSubOpenID = ReceiverType("PERSONAL_SUB_OPENID") //个人sub_openid（由品牌主的APPID转换得到）
+)
+
 type receiver struct {
-	Type string `json:"type"`
+	Type ReceiverType `json:"type"`
 	/*分账接收方类型	[1,32]	是	分账接收方类型，枚举值：
 	MERCHANT_ID：商户
 	PERSONAL_OPENID：个人
@@ -46,12 +54,19 @@ type receiver struct {
 	*/
 }
 
+type ProfitSharingStatus string
+
+const (
+	ProfitSharingStatusProcessing = ProfitSharingStatus("PROCESSING") //处理中
+	ProfitSharingStatusFinished   = ProfitSharingStatus("FINISHED")   //处理完成
+)
+
 type profitSharingRes struct {
-	SubMchID      string `json:"sub_mchid"`      //二级商户号	[1,32]	是	分账出资的电商平台二级商户，填写微信支付分配的商户号。示例值：1900000109
-	TransactionID string `json:"transaction_id"` //微信订单号	[1,32]	是	微信支付订单号。示例值： 4208450740201411110007820472
-	OutOrderNo    string `json:"out_order_no"`   //商户分账单号	[1,64]	是	商户系统内部的分账单号，在商户系统内部唯一（单次分账、多次分账、完结分账应使用不同的商户分账单号），同一分账单号多次请求等同一次。示例值：P20150806125346
-	OrderID       string `json:"order_id"`       //微信分账单号	[1,64]	是	微信分账单号，微信系统返回的唯一标识。示例值： 6754760740201411110007865434
-	Status        string `json:"status"`
+	SubMchID      string              `json:"sub_mchid"`      //二级商户号	[1,32]	是	分账出资的电商平台二级商户，填写微信支付分配的商户号。示例值：1900000109
+	TransactionID string              `json:"transaction_id"` //微信订单号	[1,32]	是	微信支付订单号。示例值： 4208450740201411110007820472
+	OutOrderNo    string              `json:"out_order_no"`   //商户分账单号	[1,64]	是	商户系统内部的分账单号，在商户系统内部唯一（单次分账、多次分账、完结分账应使用不同的商户分账单号），同一分账单号多次请求等同一次。示例值：P20150806125346
+	OrderID       string              `json:"order_id"`       //微信分账单号	[1,64]	是	微信分账单号，微信系统返回的唯一标识。示例值： 6754760740201411110007865434
+	Status        ProfitSharingStatus `json:"status"`
 	/*分账单状态	[1,32]	是	分账单状态，枚举值：
 	PROCESSING：处理中
 	FINISHED：处理完成
@@ -60,10 +75,27 @@ type profitSharingRes struct {
 	Receivers []resReceiver `json:"receivers"` //分账接收方列表		是	分账接收方列表
 }
 
+type FailReason string
+
+const (
+	FailReasonAccountAbnormal             = FailReason("ACCOUNT_ABNORMAL")                //分账接收账户异常
+	FailReasonNoRelation                  = FailReason("NO_RELATION")                     // 分账关系已解除
+	FailReasonReceiverHighRisk            = FailReason("RECEIVER_HIGH_RISK")              // 高风险接收方
+	FailReasonReceiverRealNameNotVerified = FailReason("RECEIVER_REAL_NAME_NOT_VERIFIED") //接收方未实名
+)
+
+type ProfitSharingResult string
+
+const (
+	ProfitSharingResultPending = ProfitSharingResult("PENDING") //待分账
+	ProfitSharingResultSuccess = ProfitSharingResult("SUCCESS") //分账成功
+	ProfitSharingResultClosed  = ProfitSharingResult("CLOSED")  //分账失败已关闭
+)
+
 type resReceiver struct {
-	Amount      int    `json:"amount"`      //分账金额	是	分账金额，单位为分，只能为整数，不能超过原订单支付金额及最大分账比例金额。示例值：190
-	Description string `json:"description"` //分账描述	[1,80]	是	分账的原因描述，分账账单中需要体现。示例值：分给商户1900000109
-	FailReason  string `json:"fail_reason"`
+	Amount      int        `json:"amount"`      //分账金额	是	分账金额，单位为分，只能为整数，不能超过原订单支付金额及最大分账比例金额。示例值：190
+	Description string     `json:"description"` //分账描述	[1,80]	是	分账的原因描述，分账账单中需要体现。示例值：分给商户1900000109
+	FailReason  FailReason `json:"fail_reason"`
 	/*分账失败原因	[1,32]	否	分账失败原因，当分账结果result为RETURNED（已转回分账方）或CLOSED（已关闭）时，返回该字段
 	枚举值：
 	ACCOUNT_ABNORMAL : 分账接收账户异常
@@ -90,15 +122,15 @@ type resReceiver struct {
 	类型是PERSONAL_OPENID时，是个人openid，openid获取方法
 	示例值：1900000109
 	*/
-	ReceiverMchID string `json:"receiver_mchid"` //分账接收商户号	[1,32]	是	仅分账接收方类型为MERCHANT_ID时，填写微信支付分配的商户号。示例值：1900000110
-	Result        string `json:"result"`
+	ReceiverMchID string              `json:"receiver_mchid"` //分账接收商户号	[1,32]	是	仅分账接收方类型为MERCHANT_ID时，填写微信支付分配的商户号。示例值：1900000110
+	Result        ProfitSharingResult `json:"result"`
 	/*分账结果	[1,32]	是	分账结果，枚举值：
 	PENDING：待分账
 	SUCCESS：分账成功
 	CLOSED：分账失败已关闭
 	示例值：SUCCESS
 	*/
-	Type string `json:"type"`
+	Type ReceiverType `json:"type"`
 	/*分账接收方类型	[1,32]	是	分账接收方类型，枚举值：
 	MERCHANT_ID：商户号（mch_id或者sub_mch_id）
 	PERSONAL_OPENID：个人openid（由服务商的APPID转换得到）
@@ -128,11 +160,11 @@ func ProfitSharing(req *ProfitSharingReq) (*profitSharingRes, error) {
 
 // ==================== 查询分账结果 ====================
 type queryProfitSharingRes struct {
-	SubMchID      string `json:"sub_mchid"`      //二级商户号	[1,32]	是	分账出资的电商平台二级商户，填写微信支付分配的商户号。示例值：1900000109
-	TransactionID string `json:"transaction_id"` //微信订单号	[1,32]	是	微信支付订单号。	示例值： 4208450740201411110007820472
-	OutOrderNo    string `json:"out_order_no"`   //商户分账单号	[1,64]	是	商户系统内部的分账单号，在商户系统内部唯一（单次分账、多次分账、完结分账应使用不同的商户分账单号），同一分账单号多次请求等同一次。示例值：P20150806125346
-	OrderID       string `json:"order_id"`       //微信分账单号	[1,64]	是	微信分账单号，微信系统返回的唯一标识。示例值： 008450740201411110007820472
-	Status        string `json:"status"`
+	SubMchID      string              `json:"sub_mchid"`      //二级商户号	[1,32]	是	分账出资的电商平台二级商户，填写微信支付分配的商户号。示例值：1900000109
+	TransactionID string              `json:"transaction_id"` //微信订单号	[1,32]	是	微信支付订单号。	示例值： 4208450740201411110007820472
+	OutOrderNo    string              `json:"out_order_no"`   //商户分账单号	[1,64]	是	商户系统内部的分账单号，在商户系统内部唯一（单次分账、多次分账、完结分账应使用不同的商户分账单号），同一分账单号多次请求等同一次。示例值：P20150806125346
+	OrderID       string              `json:"order_id"`       //微信分账单号	[1,64]	是	微信分账单号，微信系统返回的唯一标识。示例值： 008450740201411110007820472
+	Status        ProfitSharingStatus `json:"status"`
 	/*分账单状态	[1,32]	是	分账单状态，枚举值：
 	PROCESSING：处理中
 	FINISHED：分账完成

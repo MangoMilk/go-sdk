@@ -10,12 +10,22 @@ import (
 type OrganizationType string
 
 const (
-	OrganizationTypeMicroStore   = OrganizationType("2401")
-	OrganizationTypePersonSeller = OrganizationType("2500")
-	OrganizationTypeIICH         = OrganizationType("4") // Individual industrial and commercial households
-	OrganizationTypeCompany      = OrganizationType("2")
-	OrganizationTypeGovernment   = OrganizationType("3")
-	OrganizationTypeOther        = OrganizationType("1708")
+	OrganizationTypeMicroStore   = OrganizationType("2401") //小微商户，指无营业执照的个人商家。
+	OrganizationTypePersonSeller = OrganizationType("2500") //个人卖家，指无营业执照，已持续从事电子商务经营活动满6个月，且期间经营收入累计超过20万元的个人商家。（若选择该主体，请在“补充说明”填写相关描述）
+	OrganizationTypeIICH         = OrganizationType("4")    // 个体工商户(Individual industrial and commercial households)，营业执照上的主体类型一般为个体户、个体工商户、个体经营。
+	OrganizationTypeCompany      = OrganizationType("2")    //企业，营业执照上的主体类型一般为有限公司、有限责任公司。
+	OrganizationTypeGovernment   = OrganizationType("3")    //党政、机关及事业单位，包括国内各级、各类政府机构、事业单位等（如：公安、党团、司法、交通、旅游、工商税务、市政、医疗、教育、学校等机构）。
+	OrganizationTypeOther        = OrganizationType("1708") //其他组织，不属于企业、政府/事业单位的组织机构（如社会团体、民办非企业、基金会），要求机构已办理组织机构代码证。
+)
+
+type IdDocType string
+
+const (
+	IdDocTypeMainlandIDCard  = IdDocType("IDENTIFICATION_TYPE_MAINLAND_IDCARD")  //中国大陆居民-身份证
+	IdDocTypeOverseaPassport = IdDocType("IDENTIFICATION_TYPE_OVERSEA_PASSPORT") //其他国家或地区居民-护照
+	IdDocTypeHongKong        = IdDocType("IDENTIFICATION_TYPE_HONGKONG")         //中国香港居民–来往内地通行证
+	IdDocTypeMacao           = IdDocType("IDENTIFICATION_TYPE_MACAO")            //中国澳门居民–来往内地通行证
+	IdDocTypeTaiwan          = IdDocType("IDENTIFICATION_TYPE_TAIWAN")           //中国台湾居民–来往大陆通行证
 )
 
 type ApplyReq struct {
@@ -50,7 +60,7 @@ type ApplyReq struct {
 	若营业执照未三证合一 ，该参数必传;
 	若营业执照三证合一 ，该参数可不传。
 	*/
-	IdDocType string `json:"id_doc_type"`
+	IdDocType IdDocType `json:"id_doc_type"`
 	/* 否，经营者/法人证件类型，长度1~64
 	1、主体为“小微/个人卖家”，可选择：身份证。
 	2、主体为“个体户/企业/党政、机关及事业单位/其他组织”，可选择：以下任一证件类型。
@@ -117,7 +127,8 @@ type ApplyReq struct {
 }
 
 type businessLicenseInfo struct {
-	BusinessLicenseCopy string `json:"business_license_copy"` /* 必填，证件扫描件，长度 1~256
+	BusinessLicenseCopy string `json:"business_license_copy"`
+	/* 必填，证件扫描件，长度 1~256
 		1、主体为“个体工商户/企业”时，请上传营业执照的证件图片。
 	2、主体为“党政、机关及事业单位/其他组织”时，请上传登记证书的证件图片。
 	3、可上传1张图片，请填写通过图片上传接口预先上传图片生成好的MediaID 。
@@ -234,15 +245,45 @@ type idDocInfo struct {
 	*/
 }
 
+type BankAccountType string
+
+const (
+	BankAccountTypePub = BankAccountType("74") //74-对公账户
+	BankAccountTypePri = BankAccountType("75") //75-对私账户
+)
+
+type AccountBank string
+
+const (
+	AccountBankGongShang = AccountBank("工商银行")   //工商银行	数字、符号	16|17|18|19	16|19|26|29
+	AccountBankJiaoTong  = AccountBank("交通银行")   //交通银行	数字	16|17|18|19|21	8|18|20|21|24|27
+	AccountBankZhaoShang = AccountBank("招商银行")   //招商银行	数字	10|12|15|16	13|15|16|17|18|19|20|21
+	AccountBankMinSheng  = AccountBank("民生银行")   //民生银行	数字	12|16	9|15|16|20
+	AccountBankZhongXin  = AccountBank("中信银行")   //中信银行	数字	16|19	19
+	AccountBankPuFa      = AccountBank("浦发银行")   //浦发银行	数字	12|16	13|14|15|16|17|18|19|20|23
+	AccountBankXingYe    = AccountBank("兴业银行")   //兴业银行	数字	16|18	17|18|22|24
+	AccountBankGuangDa   = AccountBank("光大银行")   //光大银行	数字	16|17	17|21|22|23|24|25|26|27|28|29|30
+	AccountBankGuangFa   = AccountBank("广发银行")   //广发银行	数字	16|18|19	15|17|18|19|20|23|24|25
+	AccountBankPingAn    = AccountBank("平安银行")   //平安银行	数字	11|13|14|16|19	13|14|18
+	AccountBankBeiJing   = AccountBank("北京银行")   //北京银行	数字	16|13	21|23|28
+	AccountBankHuaXia    = AccountBank("华夏银行")   //华夏银行	数字	16	16|17|22
+	AccountBankNongYe    = AccountBank("农业银行")   //农业银行	数字	16|18|19	17|19|27
+	AccountBankJianShe   = AccountBank("建设银行")   //建设银行	数字	16|17|18|19|20	16|19|20|24|25|26|27
+	AccountBankYouZheng  = AccountBank("邮政储蓄银行") //邮政储蓄银行	数字	14|18|19	16|18|23
+	AccountBankZhongGuo  = AccountBank("中国银行")   //中国银行	数字、符号	12|16|18|19	12|18|19
+	AccountBankNingBo    = AccountBank("宁波银行")   //宁波银行	数字	16|17|19	16|17|19|23
+	AccountBankOther     = AccountBank("其他银行")   //其他银行	数字	30位以内	30位以内
+)
+
 type accountInfo struct {
-	BankAccountType string `json:"bank_account_type"`
+	BankAccountType BankAccountType `json:"bank_account_type"`
 	/* 账户类型	[1,2]	是
 	1、若主体为企业/党政、机关及事业单位/其他组织，可填写：74-对公账户。
 	2、主体为“小微/个人卖家”，可选择：75-对私账户。
 	3、若主体为个体工商户，可填写：74-对公账户、75-对私账户。
 	示例值：75
 	*/
-	AccountBank string `json:"account_bank"`
+	AccountBank AccountBank `json:"account_bank"`
 	/* 开户银行	 [1,10]	是
 	详细参见开户银行对照表。
 	注：
@@ -285,8 +326,15 @@ type accountInfo struct {
 	*/
 }
 
+type ContactType string
+
+const (
+	ContactTypeLegalPerson    = ContactType("65") //65-经营者/法人
+	ContactTypePersonInCharge = ContactType("66") //66- 负责人。 （负责人：经商户授权办理微信支付业务的人员，授权范围包括但不限于签约，入驻过程需完成账户验证）
+)
+
 type contactInfo struct {
-	ContactType string `json:"contact_type"`
+	ContactType ContactType `json:"contact_type"`
 	/* 超级管理员类型	[1,2]	是
 	1、主体为“小微/个人卖家 ”，可选择：65-经营者/法人。
 	2、主体为“个体工商户/企业/党政、机关及事业单位/其他组织”，可选择：65-经营者/法人、66- 负责人。 （负责人：经商户授权办理微信支付业务的人员，授权范围包括但不限于签约，入驻过程需完成账户验证）。
@@ -326,8 +374,7 @@ type contactInfo struct {
 
 type salesSceneInfo struct {
 	StoreName string `json:"store_name"` //店铺名称	 [1,256]	是	请填写店铺全称。	示例值：爱烧烤
-
-	StoreUrl string `json:"store_url"`
+	StoreUrl  string `json:"store_url"`
 	/* 店铺链接	[1,1024]	二选一
 	1、店铺二维码or店铺链接二选一必填。
 	2、请填写店铺主页链接，需符合网站规范。

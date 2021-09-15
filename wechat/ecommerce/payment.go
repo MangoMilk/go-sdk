@@ -153,6 +153,15 @@ func MiniProgramPay(req *MiniProgramPayReq) (*miniProgramPayRes, error) {
 }
 
 // ==================== 支付/退款通知 ====================
+type EventType string
+
+const (
+	EventTypeRefundSuccess      = EventType("REFUND.SUCCESS")      //退款成功通知
+	EventTypeRefundAbnormal     = EventType("REFUND.ABNORMAL")     //退款异常通知
+	EventTypeRefundClosed       = EventType("REFUND.CLOSED")       //退款关闭通知
+	EventTypeTransactionSuccess = EventType("TRANSACTION.SUCCESS") //支付成功通知
+)
+
 type NotifyReq struct {
 	ID         string `json:"id"` // 通知ID	[1,36]	是	通知的唯一ID。示例值：EV-2018022511223320873
 	CreateTime string `json:"create_time"`
@@ -165,7 +174,7 @@ type NotifyReq struct {
 	例如：2015-05-20T13:29:35+08:00表示北京时间2015年05月20日13点29分35秒。
 	示例值：2015-05-20T13:29:35+08:00
 	*/
-	EventType string `json:"event_type"`
+	EventType EventType `json:"event_type"`
 	/* 通知类型	[1,32]	是	通知的类型，
 	REFUND.SUCCESS：退款成功通知
 	REFUND.ABNORMAL：退款异常通知
@@ -185,6 +194,29 @@ type resource struct {
 	Nonce          string `json:"nonce"`           // 随机串	[1,16]	是	加密使用的随机串。	示例值：fdasflkja484w
 }
 
+type TradeType string
+
+const (
+	TradeTypeJsapi    = TradeType("JSAPI")    //公众号支付
+	TradeTypeNative   = TradeType("NATIVE")   //扫码支付
+	TradeTypeApp      = TradeType("APP")      //APP支付
+	TradeTypeMicroPay = TradeType("MICROPAY") //付款码支付
+	TradeTypeMWeb     = TradeType("MWEB")     //H5支付
+	TradeTypeFacePay  = TradeType("FACEPAY")  //刷脸支付
+)
+
+type TradeState string
+
+const (
+	TradeStateSuccess    = TradeState("SUCCESS")    //支付成功
+	TradeStateRefund     = TradeState("REFUND")     //转入退款
+	TradeStateNotPay     = TradeState("NOTPAY")     //未支付
+	TradeStateClosed     = TradeState("CLOSED")     //已关闭
+	TradeStateRevoked    = TradeState("REVOKED")    //已撤销（付款码支付）
+	TradeStateUserPaying = TradeState("USERPAYING") //用户支付中（付款码支付）
+	TradeStatePayError   = TradeState("PAYERROR")   //支付失败(其他原因，如银行返回失败)
+)
+
 type orderDetail struct {
 	SpAppID    string `json:"sp_appid"`  //服务商应用ID[1,32]	是	服务商申请的公众号或移动应用appid。示例值：wx8888888888888888
 	SpMchID    string `json:"sp_mchid"`  //服务商户号	[1,32]	是	服务商户号，由微信支付生成并下发。	示例值：1230000109
@@ -195,8 +227,8 @@ type orderDetail struct {
 	特殊规则：最小字符长度为6
 	示例值：1217752501201407033233368018
 	*/
-	TransactionID string `json:"transaction_id"` //微信支付订单号	[1,32]	否	微信支付系统生成的订单号。	示例值：1217752501201407033233368018
-	TradeType     string `json:"trade_type"`
+	TransactionID string    `json:"transaction_id"` //微信支付订单号	[1,32]	否	微信支付系统生成的订单号。	示例值：1217752501201407033233368018
+	TradeType     TradeType `json:"trade_type"`
 	/*交易类型	[1,16]	否	交易类型，枚举值：
 	JSAPI：公众号支付
 	NATIVE：扫码支付
@@ -206,7 +238,7 @@ type orderDetail struct {
 	FACEPAY：刷脸支付
 	示例值：MICROPAY
 	*/
-	TradeState string `json:"trade_state"`
+	TradeState TradeState `json:"trade_state"`
 	/*交易状态	[1,32]	是	交易状态，枚举值：
 	SUCCESS：支付成功
 	REFUND：转入退款

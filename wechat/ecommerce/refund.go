@@ -6,6 +6,14 @@ import (
 	"github.com/MangoMilk/go-kit/net"
 )
 
+// ==================== 退款 ====================
+type RefundAccount string
+
+const (
+	RefundAccountPartnerAdvance = RefundAccount("REFUND_SOURCE_PARTNER_ADVANCE") //电商平台垫付，需要向微信支付申请开通
+	RefundAccountSubMerchant    = RefundAccount("REFUND_SOURCE_SUB_MERCHANT")    // 二级商户，默认值
+)
+
 type RefundReq struct {
 	SpAppID    string `json:"sp_appid"`  //服务商应用ID[1,32]	是	服务商申请的公众号或移动应用appid。示例值：wx8888888888888888
 	SubAppID   string `json:"sub_appid"` //二级商户应用ID	[1,32]	否	二级商户申请的公众号或移动应用appid。示例值：wxd678efh567hg6999
@@ -22,9 +30,9 @@ type RefundReq struct {
 	注意：若订单退款金额≤1元，且属于部分退款，则不会在退款消息中体现退款原因
 	示例值：商品已售完
 	*/
-	Amount        refundAmount `json:"amount"`     //订单金额	是	订单金额信息
-	NotifyUrl     string       `json:"notify_url"` //退款结果回调url	[1,256]	否	body 异步接收微信支付退款结果通知的回调地址，通知url必须为外网可访问的url，不能携带参数。 如果参数中传了notify_url，则商户平台上配置的回调地址将不会生效，优先回调当前传的地址。示例值：https://weixin.qq.com
-	RefundAccount string       `json:"refund_account"`
+	Amount        refundAmount  `json:"amount"`     //订单金额	是	订单金额信息
+	NotifyUrl     string        `json:"notify_url"` //退款结果回调url	[1,256]	否	body 异步接收微信支付退款结果通知的回调地址，通知url必须为外网可访问的url，不能携带参数。 如果参数中传了notify_url，则商户平台上配置的回调地址将不会生效，优先回调当前传的地址。示例值：https://weixin.qq.com
+	RefundAccount RefundAccount `json:"refund_account"`
 	/*退款出资商户	[1, 32]	否	body电商平台垫资退款专用参数。
 	需先确认已开通此功能后，才能使用。若需要开通，请联系微信支付客服。
 	枚举值：
@@ -60,8 +68,7 @@ type refundRes struct {
 	CreateTime      string                  `json:"create_time"`      //退款创建时间	[1,64]	是	退款受理时间，遵循rfc3339标准格式，格式为YYYY-MM-DDTHH:mm:ss+TIMEZONE，YYYY-MM-DD表示年月日，T出现在字符串中，表示time元素的开头，HH:mm:ss表示时分秒，TIMEZONE表示时区（+08:00表示东八区时间，领先UTC 8小时，即北京时间）。例如：2015-05-20T13:29:35+08:00表示，北京时间2015年5月20日13点29分35秒。示例值：2018-06-08T10:34:56+08:00
 	Amount          refundAmount            `json:"amount"`           //订单金额	是	订单金额信息
 	PromotionDetail []refundPromotionDetail `json:"promotion_detail"` //优惠退款详情		否	优惠退款功能信息，discount_refund>0时，返回该字段。示例值：见示例
-
-	RefundAccount string `json:"refund_account"`
+	RefundAccount   RefundAccount           `json:"refund_account"`
 	/*退款资金来源	[1, 32]	否	枚举值：
 	REFUND_SOURCE_PARTNER_ADVANCE : 电商平台垫付
 	REFUND_SOURCE_SUB_MERCHANT : 二级商户，默认值
@@ -106,6 +113,14 @@ func Refund(req *RefundReq) (*refundRes, error) {
 }
 
 // ==================== 退款密文 ====================
+type RefundStatus string
+
+const (
+	RefundStatusSuccess  = RefundStatus("SUCCESS")  //退款成功
+	RefundStatusClose    = RefundStatus("CLOSE")    //退款关闭
+	RefundStatusAbnormal = RefundStatus("ABNORMAL") //退款异常，退款到银行发现用户的卡作废或者冻结了，导致原路退款银行卡失败，可前往【服务商平台—>交易中心】，手动处理此笔退款
+)
+
 type RefundCiphertext struct {
 	SpMchID    string `json:"sp_mchid"`  //服务商户号	[1,32]	是	服务商户号，由微信支付生成并下发。	示例值：1230000109
 	SubMchID   string `json:"sub_mchid"` //二级商户号	[1,32]	是	二级商户的商户号，由微信支付生成并下发。	示例值：1900000109
@@ -114,10 +129,10 @@ type RefundCiphertext struct {
 	特殊规则：最小字符长度为6
 	示例值：1217752501201407033233368018
 	*/
-	TransactionID string `json:"transaction_id"` //微信支付订单号	[1,32]	否	微信支付系统生成的订单号。	示例值：1217752501201407033233368018
-	RefundID      string `json:"refund_id"`      //微信退款单号	[1,32]	是	微信支付退款订单号。示例值：1217752501201407033233368018
-	OutRefundNo   string `json:"out_refund_no"`  //商户退款单号	[1,64]	是	商户系统内部的退款单号，商户系统内部唯一，同一退款单号多次请求只退一笔。示例值：1217752501201407033233368018
-	RefundStatus  string `json:"refund_status"`  /*退款状态	[1,16]	是
+	TransactionID string       `json:"transaction_id"` //微信支付订单号	[1,32]	否	微信支付系统生成的订单号。	示例值：1217752501201407033233368018
+	RefundID      string       `json:"refund_id"`      //微信退款单号	[1,32]	是	微信支付退款订单号。示例值：1217752501201407033233368018
+	OutRefundNo   string       `json:"out_refund_no"`  //商户退款单号	[1,64]	是	商户系统内部的退款单号，商户系统内部唯一，同一退款单号多次请求只退一笔。示例值：1217752501201407033233368018
+	RefundStatus  RefundStatus `json:"refund_status"`  /*退款状态	[1,16]	是
 	退款状态，枚举值：
 	SUCCESS：退款成功
 	CLOSE：退款关闭
@@ -146,8 +161,8 @@ type RefundCiphertext struct {
 	退回支付用户零钱通：支付用户零钱通
 	示例值：招商银行信用卡0403
 	*/
-	Amount        refundAmount `json:"amount"` //订单金额	是	订单金额信息
-	RefundAccount string       `json:"refund_account"`
+	Amount        refundAmount  `json:"amount"` //订单金额	是	订单金额信息
+	RefundAccount RefundAccount `json:"refund_account"`
 	/*退款出资商户	[1, 32]	否	body电商平台垫资退款专用参数。
 	需先确认已开通此功能后，才能使用。若需要开通，请联系微信支付客服。
 	枚举值：
@@ -166,6 +181,13 @@ type RefundCiphertext struct {
 	示例值：AVAILABLE
 	*/
 }
+type Channel string
+
+const (
+	ChannelBalance       = Channel("BALANCE")        //退回到余额
+	ChannelOtherBalance  = Channel("OTHER_BALANCE")  //原账户异常退到其他余额账户
+	ChannelOtherBankcard = Channel("OTHER_BANKCARD") //原银行卡异常退到其他银行卡
+)
 
 type refundDetail struct {
 	RefundID      string `json:"refund_id"`      //微信退款单号	[1,32]	是	微信支付退款订单号。示例值：1217752501201407033233368018
@@ -176,7 +198,7 @@ type refundDetail struct {
 	特殊规则：最小字符长度为6
 	示例值：1217752501201407033233368018
 	*/
-	channel string
+	channel Channel `json:"channel"`
 	/*退款渠道	[1,16]	是	ORIGINAL：原路退款
 	BALANCE：退回到余额
 	OTHER_BALANCE：原账户异常退到其他余额账户
@@ -218,7 +240,7 @@ type refundDetail struct {
 	2、当退款状态为退款成功时返回此参数。
 	示例值：2018-06-08T10:34:56+08:00
 	*/
-	Status string `json:"status"` /*退款状态	[1,16]	是
+	Status RefundStatus `json:"status"` /*退款状态	[1,16]	是
 	退款状态，枚举值：
 	SUCCESS：退款成功
 	CLOSE：退款关闭
@@ -227,7 +249,7 @@ type refundDetail struct {
 	*/
 	Amount          refundAmount            `json:"amount"`           //订单金额	是	订单退款金额信息
 	PromotionDetail []refundPromotionDetail `json:"promotion_detail"` //营销详情		否	优惠退款功能信息，discount_refund>0时，返回该字段。示例值：见示例
-	RefundAccount   string                  `json:"refund_account"`
+	RefundAccount   RefundAccount           `json:"refund_account"`
 	/*退款出资商户	[1, 32]	否	body电商平台垫资退款专用参数。
 	需先确认已开通此功能后，才能使用。若需要开通，请联系微信支付客服。
 	枚举值：
