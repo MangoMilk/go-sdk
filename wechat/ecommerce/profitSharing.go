@@ -144,7 +144,7 @@ type queryProfitSharingRes struct {
 }
 
 func QueryProfitSharing(subMchID, transactionID, outOrderNo string) (*queryProfitSharingRes, error) {
-	api := fmt.Sprintf("https://api.mch.weixin.qq.com/v3/ecommerce/profitsharing/orders?sub_mchid=%v&&transaction_id=%v&out_order_no=%v", subMchID, transactionID, outOrderNo)
+	api := fmt.Sprintf("https://api.mch.weixin.qq.com/v3/ecommerce/profitsharing/orders?sub_mchid=%v&transaction_id=%v&out_order_no=%v", subMchID, transactionID, outOrderNo)
 	res, httpErr := net.HttpGet(api, nil)
 	if httpErr != nil {
 		return nil, httpErr
