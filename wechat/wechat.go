@@ -21,6 +21,7 @@ const (
 	refundUrl         = "https://api.mch.weixin.qq.com/secapi/pay/refund"
 	accessTokenUrl    = "https://api.weixin.qq.com/cgi-bin/token"
 	wxACodeUnLimitUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit"
+	subscribeSendUrl  = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send"
 )
 
 type Wechat struct {
@@ -540,6 +541,40 @@ func (wx *Wechat) GetWxACodeUnLimit(accessToken string, req *GetWxACodeUnLimitRe
 	// 不是json格式证明成功，返回图片buff
 	if jsonErr := json.Unmarshal(res, &data); jsonErr != nil {
 		data.Buffer = res
+	}
+
+	return &data, nil
+}
+
+// ==================== 发送订阅通知 ====================
+type SubscribeSendReq struct {
+	ToUser           string                           `json:"touser"`            // 是	接收者（用户）的 openid
+	TemplateID       string                           `json:"template_id"`       // 是	所需下发的订阅模板id
+	Page             string                           `json:"page"`              // 否	点击模板卡片后的跳转页面，仅限本小程序内的页面。支持带参数,（示例index?foo=bar）。该字段不填则模板无跳转。
+	Data             map[string]SubscribeSendDataItem `json:"data"`              // 是	模板内容，格式形如 { "key1": { "value": any }, "key2": { "value": any } }
+	MiniprogramState string                           `json:"miniprogram_state"` // 否	跳转小程序类型：developer为开发版；trial为体验版；formal为正式版；默认为正式版
+	Lang             string                           `json:"lang"`              // 否	进入小程序查看”的语言类型，支持zh_CN(简体中文)、en_US(英文)、zh_HK(繁体中文)、zh_TW(繁体中文)，默认为zh_CN
+}
+
+type SubscribeSendDataItem struct {
+	Value string `json:"value"`
+}
+
+type subscribeSendRes struct {
+	ErrCode float64 `json:"errcode"`
+	ErrMsg  string  `json:"errmsg"`
+}
+
+func (wx *Wechat) SubscribeSend(accessToken string, req *SubscribeSendReq) (*subscribeSendRes, error) {
+	queryParam := "?access_token=" + accessToken
+	res, httpErr := net.HttpPost(subscribeSendUrl+queryParam, *req, nil, false, "", "")
+	if httpErr != nil {
+		return nil, httpErr
+	}
+
+	var data subscribeSendRes
+	if jsonErr := json.Unmarshal(res, &data); jsonErr != nil {
+		return nil, jsonErr
 	}
 
 	return &data, nil
